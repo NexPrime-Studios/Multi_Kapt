@@ -1,0 +1,71 @@
+name: mercado_app
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+# CORREÇÃO: Bloco de ambiente com a versão correta
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  wakelock_plus: ^1.5.1
+  provider: ^6.1.1
+  shared_preferences: ^2.2.2
+  audioplayers: ^5.2.1
+  font_awesome_flutter: ^10.7.0
+  flutter_image_compress: ^2.3.0
+  path_provider: ^2.1.0
+  uuid: ^4.0.0
+  
+  # Versões do Supabase
+  supabase_flutter: ^2.12.2
+  
+  # Google
+  google_maps_flutter: ^2.5.3
+  geocoding: ^2.1.1
+  google_fonts: ^6.2.1
+
+  # Outras bibliotecas necessárias
+  image_picker: ^1.0.7
+  image: ^4.1.7
+  path: ^1.8.3
+  cached_network_image: ^3.3.0
+  intl: ^0.20.2
+  latlong2: ^0.9.1
+  flutter_map: ^8.2.2
+  geolocator: ^14.0.2
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^7.2.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.4
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/icon.png
+    - assets/iconsf.png
+    - assets/iconw.png
+    - assets/iconb.png
+    - assets/sounds/beep.mp3
+    - assets/municipios.json
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon.png"
+  adaptive_icon_background: "#FFFFFF" # Cor de fundo para Android
+  adaptive_icon_foreground: "assets/icon.png"
+  web:
+    generate: true
+    image_path: "assets/icon.png"
+    backgroundColor: "#FFFFFF"
+    themeColor: "#000000"
