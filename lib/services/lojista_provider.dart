@@ -1,5 +1,6 @@
 // lib/services/lojista_provider.dart
 
+import 'dart:async'; // Adicionado para gerenciar StreamSubscription
 import 'package:flutter/material.dart';
 import '../models/mercado.dart';
 import '../models/pedido.dart';
@@ -18,7 +19,12 @@ class LojistaProvider extends ChangeNotifier {
   List<ItemMercado> _promocoes = [];
   bool _carregando = true;
 
-  // Getters para as novas listas
+  // Variáveis para controlar e cancelar as conexões ativas
+  StreamSubscription? _subMercado;
+  StreamSubscription? _subPedidos;
+  StreamSubscription? _subEquipe;
+
+  // Getters
   String? get mercadoIdAtivo => _mercadoIdAtivo;
   CargoAcesso? get cargoAtual => _cargoAtual;
   LojistaService get service => _service;
@@ -34,10 +40,17 @@ class LojistaProvider extends ChangeNotifier {
   /// Método principal de entrada
   void inicializar(String adminUid) {
     _carregando = true;
+
+    // CANCELA subscrições existentes para evitar erro de múltiplas streams/contexto
+    _subMercado?.cancel();
+    _subPedidos?.cancel();
+    _subEquipe?.cancel();
+
     notifyListeners();
 
     // Ouvinte para dados do Mercado (Perfil)
-    _service.streamMercadoPorAdmin(adminUid).listen((mercadoEncontrado) {
+    _subMercado =
+        _service.streamMercadoPorAdmin(adminUid).listen((mercadoEncontrado) {
       _mercado = mercadoEncontrado;
 
       if (mercadoEncontrado != null) {
@@ -60,7 +73,9 @@ class LojistaProvider extends ChangeNotifier {
 
   /// Escuta pedidos que não foram entregues
   void _ouvirPedidos(String mercadoId) {
-    _service.buscarPedidosAtivos(mercadoId).listen((listaPedidos) {
+    _subPedidos?.cancel(); // Limpa antes de criar nova escuta
+    _subPedidos =
+        _service.buscarPedidosAtivos(mercadoId).listen((listaPedidos) {
       _pedidosAtivos = listaPedidos;
       notifyListeners();
     });
@@ -68,7 +83,9 @@ class LojistaProvider extends ChangeNotifier {
 
   /// Escuta a lista de funcionários do mercado
   void _ouvirEquipe(String mercadoId) {
-    _service.listarFuncionarios(mercadoId).listen((listaFuncionarios) {
+    _subEquipe?.cancel(); // Limpa antes de criar nova escuta
+    _subEquipe =
+        _service.listarFuncionarios(mercadoId).listen((listaFuncionarios) {
       _equipe = listaFuncionarios;
       notifyListeners();
     });
@@ -115,7 +132,6 @@ class LojistaProvider extends ChangeNotifier {
     }
   }
 
-  /// Filtra itens que possuem promoção ativa baseada na data atual
   void _processarPromocoes() {
     if (_mercado == null) return;
 
@@ -141,7 +157,6 @@ class LojistaProvider extends ChangeNotifier {
   Future<void> removerItem(ItemMercado item) async {
     if (_mercado == null) return;
     await _service.removerItemDoInventario(_mercado!.id, item);
-    // O Stream cuidará de atualizar a lista _mercado.itens automaticamente
   }
 
   Future<void> adicionarItem(ItemMercado novoItem) async {
@@ -214,11 +229,23 @@ class LojistaProvider extends ChangeNotifier {
   }
 
   void limpar() {
+    _subMercado?.cancel();
+    _subPedidos?.cancel();
+    _subEquipe?.cancel();
     _mercado = null;
     _pedidosAtivos = [];
     _equipe = [];
     _promocoes = [];
     _carregando = true;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    // Garante que todas as conexões sejam fechadas quando o provider sair da memória
+    _subMercado?.cancel();
+    _subPedidos?.cancel();
+    _subEquipe?.cancel();
+    super.dispose();
   }
 }

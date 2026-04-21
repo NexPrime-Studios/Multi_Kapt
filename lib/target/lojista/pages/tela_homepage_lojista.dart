@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mercado_app/target/shared/pages/login_page.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../widgets/sidebar_lojista.dart';
@@ -8,7 +9,6 @@ import 'tela_perfil_mercado.dart';
 import 'tela_inventario_mercado.dart';
 import 'tela_historico_pedidos.dart';
 import 'tela_metricas.dart';
-import '../login/login_lojista_page.dart';
 import '../login/tela_selecao_mercado.dart';
 import 'tela_equipe.dart';
 import 'tela_promocoes.dart';
@@ -39,7 +39,7 @@ class _HomePageLojistaState extends State<HomePageLojista> {
       // Redireciona para login caso não haja usuário autenticado
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const LoginLojistaPage()),
+        MaterialPageRoute(builder: (context) => const LoginPage()),
       );
     } else {
       // Inicializa o provider com os dados do administrador logado

@@ -1,14 +1,15 @@
-// lib/models/mercado.dart
 import 'item_mercado.dart';
 import 'horario_mercado.dart';
 import 'produto_enums.dart';
 
-// Definindo o enum aqui como você sugeriu
 enum PagamentosAceitos { dinheiro, cartao, pix, vale }
 
 class Mercado {
   final String id;
+  final String adminUid;
   final String nome;
+  final String? cnpj;
+  final String? email;
   final String logoUrl;
   final String capaUrl;
   final String cidade;
@@ -23,16 +24,16 @@ class Mercado {
   final List<ItemMercado> itens;
   final Map<String, DiaFuncionamento> gradeHorarios;
   final List<CategoriaProduto> categorias;
-
-  // ALTERADO: De List<String> para List<PagamentosAceitos>
   final List<PagamentosAceitos> pagamentosAceitos;
-
   final double latitude;
   final double longitude;
 
   Mercado({
     required this.id,
+    required this.adminUid,
     required this.nome,
+    this.cnpj,
+    this.email,
     required this.logoUrl,
     required this.capaUrl,
     required this.cidade,
@@ -52,54 +53,39 @@ class Mercado {
     required this.longitude,
   });
 
-  Mercado copyWith({
-    String? id,
-    String? nome,
-    String? logoUrl,
-    String? capaUrl,
-    String? cidade,
-    String? estado,
-    String? endereco,
-    String? telefone,
-    double? estrelas,
-    double? taxaEntrega,
-    double? pedidoMinimo,
-    String? tempoEntrega,
-    bool? estaAberto,
-    List<ItemMercado>? itens,
-    Map<String, DiaFuncionamento>? gradeHorarios,
-    List<CategoriaProduto>? categorias,
-    List<PagamentosAceitos>? pagamentosAceitos, // Alterado aqui também
-    double? latitude,
-    double? longitude,
-  }) {
-    return Mercado(
-      id: id ?? this.id,
-      nome: nome ?? this.nome,
-      logoUrl: logoUrl ?? this.logoUrl,
-      capaUrl: capaUrl ?? this.capaUrl,
-      cidade: cidade ?? this.cidade,
-      estado: estado ?? this.estado,
-      endereco: endereco ?? this.endereco,
-      telefone: telefone ?? this.telefone,
-      estrelas: estrelas ?? this.estrelas,
-      taxaEntrega: taxaEntrega ?? this.taxaEntrega,
-      pedidoMinimo: pedidoMinimo ?? this.pedidoMinimo,
-      tempoEntrega: tempoEntrega ?? this.tempoEntrega,
-      estaAberto: estaAberto ?? this.estaAberto,
-      itens: itens ?? this.itens,
-      gradeHorarios: gradeHorarios ?? this.gradeHorarios,
-      categorias: categorias ?? this.categorias,
-      pagamentosAceitos: pagamentosAceitos ?? this.pagamentosAceitos,
-      latitude: latitude ?? this.latitude,
-      longitude: longitude ?? this.longitude,
-    );
+  Map<String, dynamic> toMap() {
+    return {
+      'admin_uid': adminUid,
+      'nome': nome,
+      'cnpj': cnpj,
+      'email': email,
+      'logo_url': logoUrl,
+      'capa_url': capaUrl,
+      'cidade': cidade.toLowerCase().trim(),
+      'estado': estado.toUpperCase().trim(),
+      'endereco': endereco,
+      'telefone': telefone,
+      'estrelas': estrelas,
+      'taxa_entrega': taxaEntrega,
+      'pedido_minimo': pedidoMinimo,
+      'tempo_entrega': tempoEntrega,
+      'esta_aberto': estaAberto,
+      'itens': itens.map((i) => i.toMap()).toList(), // Coluna JSONB
+      'grade_horarios': gradeHorarios.map((k, v) => MapEntry(k, v.toMap())),
+      'categorias': categorias.map((c) => c.name).toList(),
+      'pagamentos_aceitos': pagamentosAceitos.map((p) => p.name).toList(),
+      'latitude': latitude,
+      'longitude': longitude,
+    };
   }
 
   factory Mercado.fromMap(String id, Map<String, dynamic> map) {
     return Mercado(
       id: id,
+      adminUid: map['admin_uid'] ?? '',
       nome: map['nome'] ?? '',
+      cnpj: map['cnpj'],
+      email: map['email'],
       logoUrl: map['logo_url'] ?? '',
       capaUrl: map['capa_url'] ?? '',
       cidade: map['cidade'] ?? '',
@@ -128,26 +114,53 @@ class Mercado {
     );
   }
 
-  Map<String, dynamic> toMap() {
-    return {
-      'nome': nome,
-      'logo_url': logoUrl,
-      'capa_url': capaUrl,
-      'cidade': cidade.toLowerCase().trim(),
-      'estado': estado.toUpperCase().trim(),
-      'endereco': endereco,
-      'telefone': telefone,
-      'estrelas': estrelas,
-      'taxa_entrega': taxaEntrega,
-      'pedido_minimo': pedidoMinimo,
-      'tempo_entrega': tempoEntrega,
-      'esta_aberto': estaAberto,
-      'itens': itens.map((i) => i.toMap()).toList(),
-      'grade_horarios': gradeHorarios.map((k, v) => MapEntry(k, v.toMap())),
-      'categorias': categorias.map((c) => c.name).toList(),
-      'pagamentos_aceitos': pagamentosAceitos.map((p) => p.name).toList(),
-      'latitude': latitude,
-      'longitude': longitude,
-    };
+  Mercado copyWith({
+    String? id,
+    String? adminUid,
+    String? nome,
+    String? cnpj,
+    String? email,
+    String? logoUrl,
+    String? capaUrl,
+    String? cidade,
+    String? estado,
+    String? endereco,
+    String? telefone,
+    double? estrelas,
+    double? taxaEntrega,
+    double? pedidoMinimo,
+    String? tempoEntrega,
+    bool? estaAberto,
+    List<ItemMercado>? itens,
+    Map<String, DiaFuncionamento>? gradeHorarios,
+    List<CategoriaProduto>? categorias,
+    List<PagamentosAceitos>? pagamentosAceitos,
+    double? latitude,
+    double? longitude,
+  }) {
+    return Mercado(
+      id: id ?? this.id,
+      adminUid: adminUid ?? this.adminUid,
+      nome: nome ?? this.nome,
+      cnpj: cnpj ?? this.cnpj,
+      email: email ?? this.email,
+      logoUrl: logoUrl ?? this.logoUrl,
+      capaUrl: capaUrl ?? this.capaUrl,
+      cidade: cidade ?? this.cidade,
+      estado: estado ?? this.estado,
+      endereco: endereco ?? this.endereco,
+      telefone: telefone ?? this.telefone,
+      estrelas: estrelas ?? this.estrelas,
+      taxaEntrega: taxaEntrega ?? this.taxaEntrega,
+      pedidoMinimo: pedidoMinimo ?? this.pedidoMinimo,
+      tempoEntrega: tempoEntrega ?? this.tempoEntrega,
+      estaAberto: estaAberto ?? this.estaAberto,
+      itens: itens ?? this.itens,
+      gradeHorarios: gradeHorarios ?? this.gradeHorarios,
+      categorias: categorias ?? this.categorias,
+      pagamentosAceitos: pagamentosAceitos ?? this.pagamentosAceitos,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+    );
   }
 }

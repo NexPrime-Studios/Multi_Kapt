@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../models/pedido.dart';
-import '../../../services/cliente_service.dart';
-import '../../../services/cliente_provider.dart';
+import '../../../services/usuario_service.dart';
+import '../../../services/usuario_provider.dart';
 import '../widgets/card_pedido_cliente.dart';
 
 class HistoricoPedidosCliente extends StatefulWidget {
@@ -24,7 +24,7 @@ class _HistoricoPedidosClienteState extends State<HistoricoPedidosCliente> {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.watch<ClienteProvider>();
+    final p = context.watch<UsuarioProvider>();
     final cores = Theme.of(context).colorScheme;
 
     return Scaffold(
@@ -57,7 +57,7 @@ class _HistoricoPedidosClienteState extends State<HistoricoPedidosCliente> {
           : StreamBuilder<List<Pedido>>(
               key:
                   _streamKey, // Usamos a key aqui para o botão de atualizar funcionar
-              stream: ClienteService().acompanharMeusPedidos(p.cliente!.uid),
+              stream: UsuarioService().acompanharMeusPedidos(p.usuario!.uid),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(

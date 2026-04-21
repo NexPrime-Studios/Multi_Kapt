@@ -14,7 +14,6 @@ class TelaInventarioMercado extends StatefulWidget {
 }
 
 class _TelaInventarioMercadoState extends State<TelaInventarioMercado> {
-  // Controle local apenas para o texto da busca
   String _filtroNome = "";
 
   @override
@@ -30,7 +29,6 @@ class _TelaInventarioMercadoState extends State<TelaInventarioMercado> {
       );
     }
 
-    // Lógica de filtragem reativa utilizando o novo campo produtoNome
     final listaFiltrada = mercado.itens.where((item) {
       final nome = item.produtoNome.toLowerCase();
       return nome.contains(_filtroNome.toLowerCase());
@@ -97,7 +95,7 @@ class _TelaInventarioMercadoState extends State<TelaInventarioMercado> {
           builder: (context) => const DialogCadastroProduto(),
         ),
         icon: const Icon(Icons.add),
-        label: const Text("Novo Produto"),
+        label: const Text("Novo Produto Global"),
       ),
     );
   }

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../models/mercado.dart';
-import '../../../services/cliente_service.dart';
-import '../../../services/cliente_provider.dart';
+import '../../../services/usuario_service.dart';
+import '../../../services/usuario_provider.dart';
 import '../widgets/card_mercado_pesquisa.dart';
 import '../widgets/search_bar_widget.dart';
 import '../widgets/seletor_localizacao_widget.dart';
@@ -17,7 +17,52 @@ class HomePageCliente extends StatefulWidget {
 }
 
 class _HomePageClienteState extends State<HomePageCliente> {
-  final ClienteService _service = ClienteService();
+  final UsuarioService _service = UsuarioService();
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Verifica a necessidade de localização após o primeiro frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _verificarLocalizacaoObrigatoria();
+    });
+  }
+
+  void _verificarLocalizacaoObrigatoria() {
+    final clienteProv = context.read<UsuarioProvider>();
+    final cliente = clienteProv.usuario;
+
+    // Dispara o popup se:
+    // 1. O usuário é anônimo (cliente == null)
+    // 2. O usuário está logado mas não definiu a cidade no perfil
+    if (cliente == null || cliente.cidade.isEmpty) {
+      _mostrarPopupSelecaoCidade();
+    }
+  }
+
+  void _mostrarPopupSelecaoCidade() {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Força a escolha para navegar
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        title: const Text("Seja bem-vindo!"),
+        content: const Text(
+            "Para visualizarmos os mercados disponíveis, por favor, selecione sua cidade."),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _abrirSeletorLocalizacao();
+            },
+            child: const Text("SELECIONAR CIDADE",
+                style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
 
   void _abrirSeletorLocalizacao() {
     showDialog(
@@ -33,9 +78,12 @@ class _HomePageClienteState extends State<HomePageCliente> {
   @override
   Widget build(BuildContext context) {
     final ColorScheme cores = Theme.of(context).colorScheme;
-    final cliente = context.watch<ClienteProvider>().cliente;
-    final String cidade = cliente?.cidade ?? "Edéia";
-    final String estado = cliente?.estado ?? "GO";
+    final cliente = context.watch<UsuarioProvider>().usuario;
+
+    // Removido o padrão "Edéia". Se não houver cidade, exibe um aviso ou texto vazio.
+    final String cidade = cliente?.cidade ?? "";
+    final String estado = cliente?.estado ?? "";
+    final bool temLocalizacao = cidade.isNotEmpty;
 
     final double alturaDegrade = MediaQuery.of(context).size.height * 0.45;
 
@@ -43,6 +91,7 @@ class _HomePageClienteState extends State<HomePageCliente> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
+          // 1. FUNDO COM DEGRADÊ
           Positioned(
             top: 0,
             left: 0,
@@ -54,10 +103,9 @@ class _HomePageClienteState extends State<HomePageCliente> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    cores.secondary, // Azul Neon vibrante
+                    cores.secondary,
                     cores.secondary.withOpacity(0.6),
-                    Theme.of(context)
-                        .scaffoldBackgroundColor, // Fundo cinza claríssimo
+                    Theme.of(context).scaffoldBackgroundColor,
                   ],
                   stops: const [0.0, 0.3, 1.0],
                 ),
@@ -65,48 +113,32 @@ class _HomePageClienteState extends State<HomePageCliente> {
             ),
           ),
 
-          // 2. CONTEÚDO PRINCIPAL
           CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
-              // Header Transparente Dinâmico
               SliverAppBar(
                 floating: true,
                 pinned: true,
-                // Aumentamos a altura para "empurrar" o conteúdo para baixo
                 expandedHeight: 140,
                 backgroundColor: Colors.transparent,
                 elevation: 0,
-                scrolledUnderElevation: 0, // Mantém transparente ao rolar
-
-                // --- TOPO ESQUERDO: LOGO + NOME DO APLICATIVO ---
+                scrolledUnderElevation: 0,
                 title: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Image.asset(
-                      'assets/iconw.png', // Verifique se não há um espaço aqui como 'assets/ iconw.png'
-                      height: 50,
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Icon(Icons.broken_image,
-                            color: Colors.white);
-                      },
-                    ),
-                    const SizedBox(
-                        width: 8), // Espaçamento entre a imagem e o texto
+                    Image.asset('assets/iconw.png',
+                        height: 50, fit: BoxFit.contain),
+                    const SizedBox(width: 8),
                     const Text(
                       "MULTI KAPT",
                       style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 20,
-                        letterSpacing: -1,
-                      ),
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 20,
+                          letterSpacing: -1),
                     ),
                   ],
                 ),
-
-                // --- TOPO DIREITO: BOTÃO DE LOCALIZAÇÃO (Glassmorphism) ---
                 actions: [
                   Padding(
                     padding: const EdgeInsets.only(right: 12),
@@ -117,8 +149,7 @@ class _HomePageClienteState extends State<HomePageCliente> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(
-                          color:
-                              Colors.white.withOpacity(0.2), // Efeito de vidro
+                          color: Colors.white.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Row(
@@ -127,7 +158,9 @@ class _HomePageClienteState extends State<HomePageCliente> {
                                 color: Colors.white, size: 16),
                             const SizedBox(width: 4),
                             Text(
-                              "$cidade, $estado",
+                              temLocalizacao
+                                  ? "$cidade, $estado"
+                                  : "Selecionar local",
                               style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 12,
@@ -139,8 +172,6 @@ class _HomePageClienteState extends State<HomePageCliente> {
                     ),
                   ),
                 ],
-
-                // --- ABAIXO (DESCIDA): BARRA DE PESQUISA ---
                 bottom: PreferredSize(
                   preferredSize: const Size.fromHeight(80),
                   child: Padding(
@@ -153,58 +184,54 @@ class _HomePageClienteState extends State<HomePageCliente> {
                 ),
               ),
 
-              // LISTA DE MERCADOS REGIONAIS
+              // 3. LISTA DE MERCADOS
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-                sliver: StreamBuilder<List<Mercado>>(
-                  stream: _service.buscarMercadosPorLocalizacao(
-                    cidade: cidade,
-                    estado: estado,
-                  ),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const SliverToBoxAdapter(
-                        child: Padding(
-                          padding: EdgeInsets.only(top: 50),
-                          child: Center(child: CircularProgressIndicator()),
-                        ),
-                      );
-                    }
-
-                    final mercados = snapshot.data ?? [];
-
-                    if (mercados.isEmpty) {
-                      return SliverFillRemaining(
+                sliver: !temLocalizacao
+                    ? const SliverFillRemaining(
                         hasScrollBody: false,
                         child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.storefront_outlined,
-                                  size: 60,
-                                  color: cores.primary.withOpacity(0.3)),
-                              const SizedBox(height: 16),
-                              Text("Nenhum mercado em $cidade",
-                                  style: const TextStyle(
-                                      color: Colors.grey,
-                                      fontWeight: FontWeight.bold)),
-                            ],
-                          ),
+                          child: Text(
+                              "Selecione uma cidade para ver os mercados.",
+                              style: TextStyle(
+                                  color: Colors.grey,
+                                  fontWeight: FontWeight.bold)),
                         ),
-                      );
-                    }
+                      )
+                    : StreamBuilder<List<Mercado>>(
+                        stream: _service.buscarMercadosPorLocalizacao(
+                            cidade: cidade, estado: estado),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const SliverToBoxAdapter(
+                              child: Center(child: CircularProgressIndicator()),
+                            );
+                          }
 
-                    return SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) => Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: CardMercadoPesquisa(mercado: mercados[index]),
-                        ),
-                        childCount: mercados.length,
+                          final mercados = snapshot.data ?? [];
+                          if (mercados.isEmpty) {
+                            return SliverFillRemaining(
+                              hasScrollBody: false,
+                              child: Center(
+                                child: Text(
+                                    "Nenhum mercado encontrado em $cidade"),
+                              ),
+                            );
+                          }
+
+                          return SliverList(
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) => Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: CardMercadoPesquisa(
+                                    mercado: mercados[index]),
+                              ),
+                              childCount: mercados.length,
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
               ),
             ],
           ),

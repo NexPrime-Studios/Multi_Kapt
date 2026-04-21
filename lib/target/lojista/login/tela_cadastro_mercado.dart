@@ -80,7 +80,9 @@ class _CadastroMercadoPageState extends State<CadastroMercadoPage> {
 
   @override
   void dispose() {
-    for (var c in _controllers.values) c.dispose();
+    for (var c in _controllers.values) {
+      c.dispose();
+    }
     super.dispose();
   }
 
@@ -127,8 +129,9 @@ class _CadastroMercadoPageState extends State<CadastroMercadoPage> {
           mercadoId: user.id,
           isLogo: true,
         );
-        if (res == null)
+        if (res == null) {
           throw "Erro ao carregar o Logo."; // Garante que não prossegue sem a URL
+        }
         logoUrl = res;
       }
 
@@ -144,6 +147,7 @@ class _CadastroMercadoPageState extends State<CadastroMercadoPage> {
 
       final novoMercado = Mercado(
         id: '',
+        adminUid: '',
         nome: _controllers['nome']!.text.trim(),
         logoUrl: logoUrl,
         capaUrl: capaUrl,

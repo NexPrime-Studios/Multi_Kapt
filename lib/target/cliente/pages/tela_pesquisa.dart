@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../services/cliente_service.dart';
-import '../../../services/cliente_provider.dart';
+import '../../../services/usuario_service.dart';
+import '../../../services/usuario_provider.dart';
 import '../../../models/mercado.dart';
 import '../widgets/card_mercado_pesquisa.dart';
 import '../widgets/search_bar_widget.dart';
@@ -14,7 +14,7 @@ class PesquisaPage extends StatefulWidget {
 }
 
 class _PesquisaPageState extends State<PesquisaPage> {
-  final ClienteService _service = ClienteService();
+  final UsuarioService _service = UsuarioService();
   final TextEditingController _searchController = TextEditingController();
   String _termo = "";
 
@@ -39,9 +39,9 @@ class _PesquisaPageState extends State<PesquisaPage> {
   @override
   Widget build(BuildContext context) {
     final cores = Theme.of(context).colorScheme;
-    final p = context.read<ClienteProvider>();
-    final cidade = p.cliente?.cidade ?? "Edéia";
-    final estado = p.cliente?.estado ?? "GO";
+    final p = context.read<UsuarioProvider>();
+    final cidade = p.usuario?.cidade ?? "Edéia";
+    final estado = p.usuario?.estado ?? "GO";
 
     return Scaffold(
       backgroundColor: Colors.white,

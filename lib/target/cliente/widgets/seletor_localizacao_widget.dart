@@ -2,8 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../../../services/cliente_provider.dart';
-import '../../../models/cliente.dart';
+import '../../../services/usuario_provider.dart';
 
 class SeletorCidadeDashboard extends StatefulWidget {
   const SeletorCidadeDashboard({super.key});
@@ -44,7 +43,7 @@ class _SeletorCidadeDashboardState extends State<SeletorCidadeDashboard> {
       }
 
       if (!mounted) return;
-      final cliente = context.read<ClienteProvider>().cliente;
+      final cliente = context.read<UsuarioProvider>().usuario;
       if (cliente != null) {
         _estadoController.text = cliente.estado;
         _cidadeController.text = cliente.cidade;
@@ -69,8 +68,8 @@ class _SeletorCidadeDashboardState extends State<SeletorCidadeDashboard> {
   }
 
   void _atualizarLocalizacaoLocal() {
-    final provider = context.read<ClienteProvider>();
-    final clienteAtual = provider.cliente;
+    final provider = context.read<UsuarioProvider>();
+    final clienteAtual = provider.usuario;
 
     if (clienteAtual == null) return;
 
@@ -136,7 +135,7 @@ class _SeletorCidadeDashboardState extends State<SeletorCidadeDashboard> {
                 SizedBox(
                   width: 85,
                   child: DropdownButtonFormField<String>(
-                    value: _estadoController.text.isEmpty
+                    initialValue: _estadoController.text.isEmpty
                         ? null
                         : _estadoController.text,
                     isExpanded: true, // Garante que a seta não empurre o layout

@@ -37,7 +37,7 @@ class LojistaService {
     try {
       final response = await _supabase
           .from('funcionarios')
-          .select('*, mercados(nome)')
+          .select('mercado_id, funcao, mercados(nome)')
           .eq('email', user.email!)
           .eq('ativo', true);
 

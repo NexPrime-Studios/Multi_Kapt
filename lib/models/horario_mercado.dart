@@ -21,4 +21,16 @@ class DiaFuncionamento {
       fechamento: map['fechamento'] ?? "00:00",
     );
   }
+
+  DiaFuncionamento copyWith({
+    bool? aberto,
+    String? abertura,
+    String? fechamento,
+  }) {
+    return DiaFuncionamento(
+      aberto: aberto ?? this.aberto,
+      abertura: abertura ?? this.abertura,
+      fechamento: fechamento ?? this.fechamento,
+    );
+  }
 }

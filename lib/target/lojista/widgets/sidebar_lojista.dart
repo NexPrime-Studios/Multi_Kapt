@@ -1,9 +1,10 @@
 // lib/target/lojista/widgets/sidebar_lojista.dart
 
 import 'package:flutter/material.dart';
+import 'package:mercado_app/target/shared/pages/login_page.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../services/lojista_provider.dart';
+import '../../../services/auth_service.dart';
 
 class SidebarLojista extends StatelessWidget {
   final int indiceSelecionado;
@@ -19,6 +20,9 @@ class SidebarLojista extends StatelessWidget {
   Widget build(BuildContext context) {
     final lojistaProvider = context.watch<LojistaProvider>();
     final mercado = lojistaProvider.mercado;
+
+    if (mercado == null) return const SizedBox.shrink();
+
     final totalPendentes = lojistaProvider.totalPendentes;
 
     return Container(
@@ -26,48 +30,81 @@ class SidebarLojista extends StatelessWidget {
       color: const Color(0xFF121212),
       child: Column(
         children: [
-          const SizedBox(height: 40),
-          const Text(
-            'MERCADO MULTI',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-              letterSpacing: 1.2,
+          const SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Image.asset(
+                  'assets/iconw.png',
+                  width: 60,
+                  height: 60,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => const Icon(
+                    Icons.shopping_bag_rounded,
+                    color: Colors.amber,
+                    size: 50,
+                  ),
+                ),
+                const SizedBox(height: 12), // Espaço vertical agora
+                const Text(
+                  'MULTI KAPT',
+                  style: TextStyle(
+                    color: Colors.lightBlueAccent,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20, // Aumentei levemente a fonte
+                    letterSpacing: 2.0,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
           ),
+
           const SizedBox(height: 40),
-          _itemMenu(
-            context,
-            index: 0,
-            icone: Icons.shopping_basket,
-            rotulo: 'Pedidos',
-            badge: totalPendentes > 0 ? totalPendentes : null,
+
+          // ITENS DO MENU
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                _itemMenu(
+                  context,
+                  index: 0,
+                  icone: Icons.shopping_basket,
+                  rotulo: 'Pedidos',
+                  badge: totalPendentes > 0 ? totalPendentes : null,
+                ),
+                _itemMenu(context,
+                    index: 1, icone: Icons.store, rotulo: 'Perfil'),
+                _itemMenu(context,
+                    index: 2, icone: Icons.insights, rotulo: 'Métricas'),
+                _itemMenu(context,
+                    index: 3, icone: Icons.inventory_2, rotulo: 'Produtos'),
+                _itemMenu(
+                  context,
+                  index: 6,
+                  icone: Icons.campaign_rounded,
+                  rotulo: 'Promoções',
+                ),
+                _itemMenu(context,
+                    index: 5,
+                    icone: Icons.people_alt_rounded,
+                    rotulo: 'Equipe'),
+                _itemMenu(context,
+                    index: 4, icone: Icons.receipt_long, rotulo: 'Histórico'),
+              ],
+            ),
           ),
-          _itemMenu(context, index: 1, icone: Icons.store, rotulo: 'Perfil'),
-          _itemMenu(context,
-              index: 2, icone: Icons.insights, rotulo: 'Métricas'),
-          _itemMenu(context,
-              index: 3, icone: Icons.inventory_2, rotulo: 'Produtos'),
-          _itemMenu(
-            context,
-            index: 6,
-            icone: Icons.campaign_rounded,
-            rotulo: 'Promoções',
-          ),
-          _itemMenu(context,
-              index: 5, icone: Icons.people_alt_rounded, rotulo: 'Equipe'),
-          _itemMenu(context,
-              index: 4, icone: Icons.receipt_long, rotulo: 'Histórico'),
-          const Spacer(),
+
+          // RODAPÉ COM STATUS E SAIR
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: [
                 Expanded(
-                  child: mercado != null
-                      ? _construirStatusLojaQuadrado(context, lojistaProvider)
-                      : const SizedBox.shrink(),
+                  child: _construirStatusLojaQuadrado(context, lojistaProvider),
                 ),
                 const SizedBox(width: 8),
                 Expanded(child: _construirBotaoSairQuadrado(context)),
@@ -181,8 +218,21 @@ class SidebarLojista extends StatelessWidget {
   Widget _construirBotaoSairQuadrado(BuildContext context) {
     return InkWell(
       onTap: () async {
-        context.read<LojistaProvider>().limpar();
-        await Supabase.instance.client.auth.signOut();
+        try {
+          final authService = AuthService();
+          await authService.signOut();
+
+          if (context.mounted) {
+            context.read<LojistaProvider>().limpar();
+
+            Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => const LoginPage()),
+              (route) => false,
+            );
+          }
+        } catch (e) {
+          debugPrint("Erro ao sair: $e");
+        }
       },
       borderRadius: BorderRadius.circular(12),
       child: Container(
@@ -195,12 +245,12 @@ class SidebarLojista extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.logout, color: Colors.red[400], size: 20),
+            Icon(Icons.logout_rounded, color: Colors.red[400], size: 20),
             const SizedBox(height: 4),
-            Text(
+            const Text(
               "SAIR",
               style: TextStyle(
-                color: Colors.red[400],
+                color: Colors.red,
                 fontSize: 9,
                 fontWeight: FontWeight.bold,
               ),

@@ -5,10 +5,10 @@ import '../models/mercado.dart';
 import '../models/produto.dart';
 import '../models/pedido.dart';
 import '../models/carrinho_item.dart';
-import '../models/cliente.dart';
+import '../models/usuario.dart';
 import '../models/item_pedido.dart';
 
-class ClienteService {
+class UsuarioService {
   final _supabase = Supabase.instance.client;
 
   // --- CONSUMO DE DADOS ---
@@ -95,7 +95,7 @@ class ClienteService {
     required Map<String, List<CarrinhoItem>> agrupamento,
     required Map<String, String> pagamentos,
     required Map<String, double> taxas,
-    required Cliente cliente,
+    required Usuario cliente,
   }) async {
     final now = DateTime.now();
 
@@ -155,17 +155,5 @@ class ClienteService {
 
       await _supabase.from('pedidos').insert(novoPedido.toMap());
     }
-  }
-
-  Future<void> atualizarDadosPerfil(Cliente cliente) async {
-    await _supabase.from('clientes').update({
-      'nome': cliente.nome,
-      'telefone': cliente.telefone,
-      'endereco': cliente.endereco,
-      'latitude': cliente.latitude,
-      'longitude': cliente.longitude,
-      'cidade': cliente.cidade,
-      'estado': cliente.estado,
-    }).eq('uid', cliente.uid);
   }
 }

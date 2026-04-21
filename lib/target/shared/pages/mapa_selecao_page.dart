@@ -37,49 +37,47 @@ class _TelaMapaSelecaoState extends State<TelaMapaSelecao> {
       if (locations.isNotEmpty) {
         final novaPos =
             LatLng(locations.first.latitude, locations.first.longitude);
-
-        setState(() {
-          _pontoAtual = novaPos;
-        });
-
-        _mapController.move(novaPos, 16);
-        FocusScope.of(context).unfocus();
+        _moverPara(novaPos);
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content:
-                Text("Endereço não encontrado. Tente ser mais específico.")),
+            content: Text("Endereço não encontrado ou serviço indisponível.")),
       );
     } finally {
       setState(() => _buscando = false);
     }
   }
 
-  Future<void> _irParaMinhaLocalizacao() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text("Ative o GPS")));
-      return;
-    }
+  void _moverPara(LatLng pos) {
+    setState(() => _pontoAtual = pos);
+    _mapController.move(pos, 16);
+    FocusScope.of(context).unfocus();
+  }
 
+  Future<void> _irParaMinhaLocalizacao() async {
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) return;
     }
 
-    final pos = await Geolocator.getCurrentPosition();
-    final novaPos = LatLng(pos.latitude, pos.longitude);
-
-    setState(() => _pontoAtual = novaPos);
-    _mapController.move(novaPos, 16);
+    try {
+      final pos = await Geolocator.getCurrentPosition();
+      _moverPara(LatLng(pos.latitude, pos.longitude));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text("Não foi possível obter a sua localização.")),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final cores = Theme.of(context).colorScheme;
+    final larguraTela = MediaQuery.of(context).size.width;
+    final isWebPC = larguraTela > 900;
 
     return Scaffold(
       appBar: AppBar(
@@ -92,15 +90,14 @@ class _TelaMapaSelecaoState extends State<TelaMapaSelecao> {
       ),
       body: Stack(
         children: [
+          // 1. O MAPA (Ocupa todo o fundo)
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
               initialCenter: _pontoAtual,
               initialZoom: 16,
               onPositionChanged: (pos, hasGesture) {
-                if (hasGesture) {
-                  _pontoAtual = pos.center;
-                }
+                if (hasGesture) _pontoAtual = pos.center;
               },
             ),
             children: [
@@ -111,51 +108,71 @@ class _TelaMapaSelecaoState extends State<TelaMapaSelecao> {
               ),
             ],
           ),
+
+          // 2. BARRA DE PESQUISA (Corrigida para evitar erro de largura infinita)
           Positioned(
             top: 15,
-            left: 15,
-            right: 15,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: const [
-                  BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 10,
-                      offset: Offset(0, 5))
-                ],
-              ),
-              child: TextField(
-                controller: _searchController,
-                textInputAction: TextInputAction.search,
-                onSubmitted: (_) => _buscarEndereco(),
-                decoration: InputDecoration(
-                  hintText: "Buscar rua, bairro ou cidade...",
-                  prefixIcon: Icon(Icons.search, color: cores.primary),
-                  suffixIcon: _buscando
-                      ? const Padding(
-                          padding: EdgeInsets.all(12),
-                          child: CircularProgressIndicator(strokeWidth: 2))
-                      : IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () => _searchController.clear()),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 15),
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 15),
+                child: SizedBox(
+                  // Define um tamanho real para o telemóvel e um fixo para o PC
+                  width: isWebPC ? 500 : larguraTela - 30,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: const [
+                        BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 10,
+                            offset: Offset(0, 5))
+                      ],
+                    ),
+                    child: TextField(
+                      controller: _searchController,
+                      textInputAction: TextInputAction.search,
+                      onSubmitted: (_) => _buscarEndereco(),
+                      decoration: InputDecoration(
+                        hintText: "Procurar rua, bairro ou cidade...",
+                        prefixIcon: Icon(Icons.search, color: cores.primary),
+                        suffixIcon: _buscando
+                            ? const Padding(
+                                padding: EdgeInsets.all(12),
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2))
+                            : IconButton(
+                                icon: const Icon(Icons.clear),
+                                onPressed: () => _searchController.clear()),
+                        border: InputBorder.none,
+                        contentPadding:
+                            const EdgeInsets.symmetric(vertical: 15),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
           ),
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 35),
-              child: Icon(Icons.location_pin, color: cores.primary, size: 50),
+
+          // 3. PIN CENTRAL (Ignora toques para não atrapalhar o mapa)
+          IgnorePointer(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 35),
+                child: Icon(Icons.location_pin, color: cores.primary, size: 50),
+              ),
             ),
           ),
+
+          // 4. BOTÃO DE LOCALIZAÇÃO ATUAL
           Positioned(
             bottom: 30,
             right: 16,
             child: FloatingActionButton(
+              heroTag: "btn_mapa_gps",
               mini: true,
               backgroundColor: Colors.white,
               onPressed: _irParaMinhaLocalizacao,
@@ -169,7 +186,7 @@ class _TelaMapaSelecaoState extends State<TelaMapaSelecao> {
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: cores.secondary,
+              backgroundColor: Colors.red,
               minimumSize: const Size(double.infinity, 55),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),

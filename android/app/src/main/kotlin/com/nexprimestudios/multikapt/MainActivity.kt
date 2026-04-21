@@ -1,4 +1,4 @@
-package com.example.mercado_app
+package com.nexprimestudios.multikapt
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -1,22 +1,24 @@
 import 'dart:convert';
 
-class Cliente {
+class Usuario {
   final String uid;
   final String nome;
   final String email;
   final String telefone;
+  final String cpf;
   final String endereco;
   final String estado;
   final String cidade;
   final double? latitude;
   final double? longitude;
 
-  Cliente({
+  Usuario({
     required this.uid,
     required this.nome,
     required this.email,
     this.telefone = '',
     this.endereco = '',
+    this.cpf = '',
     this.estado = '',
     this.cidade = '',
     this.latitude,
@@ -29,6 +31,7 @@ class Cliente {
       'nome': nome,
       'email': email,
       'telefone': telefone,
+      'cpf': cpf,
       'endereco': endereco,
       'estado': estado,
       'cidade': cidade,
@@ -37,12 +40,13 @@ class Cliente {
     };
   }
 
-  factory Cliente.fromMap(Map<String, dynamic> map) {
-    return Cliente(
+  factory Usuario.fromMap(Map<String, dynamic> map) {
+    return Usuario(
       uid: map['uid'] ?? '',
       nome: map['nome'] ?? '',
       email: map['email'] ?? '',
       telefone: map['telefone'] ?? '',
+      cpf: map['cpf'] ?? '',
       endereco: map['endereco'] ?? '',
       estado: map['estado'] ?? '',
       cidade: map['cidade'] ?? '',
@@ -53,25 +57,27 @@ class Cliente {
 
   String toJson() => json.encode(toMap());
 
-  factory Cliente.fromJson(String source) =>
-      Cliente.fromMap(json.decode(source) as Map<String, dynamic>);
+  factory Usuario.fromJson(String source) =>
+      Usuario.fromMap(json.decode(source) as Map<String, dynamic>);
 
-  Cliente copyWith({
+  Usuario copyWith({
     String? uid,
     String? nome,
     String? email,
     String? telefone,
+    String? cpf,
     String? endereco,
     String? estado,
     String? cidade,
     double? latitude,
     double? longitude,
   }) {
-    return Cliente(
+    return Usuario(
       uid: uid ?? this.uid,
       nome: nome ?? this.nome,
       email: email ?? this.email,
       telefone: telefone ?? this.telefone,
+      cpf: cpf ?? this.cpf,
       endereco: endereco ?? this.endereco,
       estado: estado ?? this.estado,
       cidade: cidade ?? this.cidade,

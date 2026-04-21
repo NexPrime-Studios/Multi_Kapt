@@ -3,10 +3,10 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../services/carrinho_service.dart';
 import '../../../models/carrinho_item.dart';
-import '../../../services/cliente_service.dart';
-import '../../../services/cliente_provider.dart';
+import '../../../services/usuario_service.dart';
+import '../../../services/usuario_provider.dart';
 import '../widgets/secao_mercado_carrinho.dart';
-import 'login_page_cliente.dart';
+import '../../shared/pages/login_page.dart';
 
 class CarrinhoPage extends StatefulWidget {
   final VoidCallback? onPedidoFinalizado;
@@ -17,7 +17,7 @@ class CarrinhoPage extends StatefulWidget {
 }
 
 class _CarrinhoPageState extends State<CarrinhoPage> {
-  final ClienteService _service = ClienteService();
+  final UsuarioService _service = UsuarioService();
   final _supabase = Supabase.instance.client;
   bool _processando = false;
 
@@ -193,11 +193,11 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
   }
 
   Future<void> _finalizar(CarrinhoService carrinho) async {
-    final clienteProvider = context.read<ClienteProvider>();
+    final clienteProvider = context.read<UsuarioProvider>();
 
     if (_supabase.auth.currentUser == null) {
-      Navigator.push(context,
-          MaterialPageRoute(builder: (context) => const LoginPageCliente()));
+      Navigator.push(
+          context, MaterialPageRoute(builder: (context) => const LoginPage()));
       return;
     }
 
@@ -229,7 +229,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
         agrupamento: agrupamento,
         pagamentos: carrinho.pagamentosPorMercado,
         taxas: taxasParaEnviar,
-        cliente: clienteProvider.cliente!,
+        cliente: clienteProvider.usuario!,
       );
 
       carrinho.limparCarrinho();

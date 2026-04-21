@@ -121,7 +121,7 @@ class _EtapaLocalizacaoState extends State<EtapaLocalizacao> {
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
                     focusNode: FocusNode(canRequestFocus: false),
-                    value: widget.controllers['estado']!.text.isEmpty
+                    initialValue: widget.controllers['estado']!.text.isEmpty
                         ? null
                         : widget.controllers['estado']!.text,
                     dropdownColor: Colors.white,

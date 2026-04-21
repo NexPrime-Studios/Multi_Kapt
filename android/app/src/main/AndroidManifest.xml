@@ -29,7 +29,7 @@
     </queries>
 
     <application
-        android:label="mercado_app"
+        android:label="Multi Kapt"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
 

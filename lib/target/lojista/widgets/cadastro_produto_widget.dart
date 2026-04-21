@@ -1,11 +1,13 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart'; // Adicionado
 import '../../../../models/produto.dart';
 import '../../../../models/produto_enums.dart';
 import '../../../../models/tags_helper.dart';
 import '../../../../services/lojista_service.dart';
+import '../../../../services/imagem_service.dart'; // Adicionado
 import '../widgets/campo_formulario.dart';
 
-// Enum para gerenciar a navegação interna do Dialog
 enum TelaDialog { menu, buscaEdicao, formulario }
 
 class DialogCadastroProduto extends StatefulWidget {
@@ -20,13 +22,12 @@ class DialogCadastroProduto extends StatefulWidget {
 class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
   final _formKey = GlobalKey<FormState>();
   final _service = LojistaService();
+  final ImagemService _imagemService = ImagemService(); // Inicializado
 
-  // Estado de navegação
   TelaDialog _telaAtual = TelaDialog.menu;
   String _filtroBusca = "";
   Produto? _produtoSelecionado;
 
-  // Controladores
   final _nomeController = TextEditingController();
   final _marcaController = TextEditingController();
   final _barrasController = TextEditingController();
@@ -34,6 +35,7 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
   final _valorMedidaController = TextEditingController(text: "1");
   final _urlImagemController = TextEditingController();
 
+  Uint8List? _novaImagemBytes; // Para armazenar a imagem selecionada localmente
   CategoriaProduto _categoria = CategoriaProduto.mercearia;
   UnidadeMedida _unidade = UnidadeMedida.unidade;
   final List<String> _tagsSelecionadas = [];
@@ -42,7 +44,6 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
   @override
   void initState() {
     super.initState();
-    // Se o diálogo for aberto passando um produto, vai direto para edição
     if (widget.produtoParaEditar != null) {
       _carregarProduto(widget.produtoParaEditar!);
     }
@@ -60,8 +61,23 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
       _unidade = p.unidadeMedida;
       _tagsSelecionadas.clear();
       _tagsSelecionadas.addAll(p.tags);
+      _novaImagemBytes = null; // Limpa seleção local ao carregar existente
       _telaAtual = TelaDialog.formulario;
     });
+  }
+
+  // Lógica para selecionar imagem da galeria
+  Future<void> _selecionarImagem() async {
+    final picker = ImagePicker();
+    final image =
+        await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+
+    if (image != null) {
+      final bytes = await image.readAsBytes();
+      setState(() {
+        _novaImagemBytes = bytes;
+      });
+    }
   }
 
   void _salvar() async {
@@ -69,18 +85,33 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
     setState(() => _salvando = true);
 
     try {
+      String fotoUrl = _urlImagemController.text.trim();
+      String idProduto = _produtoSelecionado?.id ??
+          DateTime.now()
+              .millisecondsSinceEpoch
+              .toString(); // ID temporário para novo produto
+
+      // Se houver uma nova imagem selecionada, faz o upload para o Storage
+      if (_novaImagemBytes != null) {
+        final resUrl = await _imagemService.uploadProdutoImage(
+          bytes: _novaImagemBytes!,
+          produtoId: idProduto,
+        );
+        if (resUrl != null) fotoUrl = resUrl;
+      }
+
       String nomeFinal = _nomeController.text.trim();
-      // Adiciona medida apenas se for um produto novo
       if (_produtoSelecionado == null &&
           _valorMedidaController.text.isNotEmpty) {
         nomeFinal += " ${_valorMedidaController.text}${_unidade.sigla}";
       }
 
       final produtoDados = Produto(
-        id: _produtoSelecionado?.id ?? '',
+        id: _produtoSelecionado?.id ??
+            '', // No insert o ID real será gerado pelo banco se vazio
         nome: nomeFinal,
         descricao: _descController.text.trim(),
-        fotoUrl: _urlImagemController.text.trim(),
+        fotoUrl: fotoUrl,
         marca: _marcaController.text.trim(),
         codigoBarras: _barrasController.text.trim(),
         categoria: _categoria,
@@ -118,17 +149,22 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 500, maxHeight: 750),
+        constraints: const BoxConstraints(maxWidth: 500, maxHeight: 850),
         child: Stack(
           children: [
-            // Conteúdo Principal
             _salvando
                 ? const SizedBox(
                     height: 300,
-                    child: Center(child: CircularProgressIndicator()))
+                    child: Center(
+                        child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 10),
+                        Text("Processando Imagem...")
+                      ],
+                    )))
                 : _renderizarConteudo(),
-
-            // Botão "X" superior direito
             Positioned(
               right: 8,
               top: 8,
@@ -154,15 +190,12 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
     }
   }
 
-  // --- TELAS INTERNAS ---
-
   Widget _buildMenu() {
     return Padding(
       padding: const EdgeInsets.all(32),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const SizedBox(height: 10),
           const Text("Gestão Global",
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
           const Text("Escolha uma ação abaixo",
@@ -196,13 +229,11 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
         Padding(
           padding: const EdgeInsets.all(16),
           child: TextField(
-            autofocus: true,
             decoration: InputDecoration(
-              hintText: "Nome ou marca...",
-              prefixIcon: const Icon(Icons.search),
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            ),
+                hintText: "Nome ou marca...",
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12))),
             onChanged: (val) => setState(() => _filtroBusca = val),
           ),
         ),
@@ -212,10 +243,8 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
           child: StreamBuilder<List<Produto>>(
             stream: _service.listarProdutosGlobais(),
             builder: (context, snapshot) {
-              if (!snapshot.hasData) {
+              if (!snapshot.hasData)
                 return const Center(child: CircularProgressIndicator());
-              }
-
               final produtos = snapshot.data!
                   .where((p) =>
                       p.nome
@@ -225,23 +254,19 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
                           .toLowerCase()
                           .contains(_filtroBusca.toLowerCase()))
                   .toList();
-
-              if (produtos.isEmpty) {
+              if (produtos.isEmpty)
                 return const Center(child: Text("Nenhum produto encontrado."));
-              }
-
               return ListView.builder(
-                padding: const EdgeInsets.only(bottom: 20),
                 itemCount: produtos.length,
                 itemBuilder: (context, i) => ListTile(
                   leading: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(produtos[i].fotoUrl,
-                        width: 45,
-                        height: 45,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const Icon(Icons.image)),
-                  ),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(produtos[i].fotoUrl,
+                          width: 45,
+                          height: 45,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) =>
+                              const Icon(Icons.image))),
                   title: Text(produtos[i].nome),
                   subtitle: Text(produtos[i].marca),
                   trailing: const Icon(Icons.chevron_right),
@@ -266,15 +291,9 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
                 ? "Novo Cadastro"
                 : "Editando Produto"),
             const SizedBox(height: 10),
-            _secaoTitulo("Identidade Visual", Icons.image),
-            CampoFormulario(
-                controller: _urlImagemController,
-                titulo: "Link da Foto",
-                label: "Cole a URL aqui",
-                icone: Icons.link),
-            const SizedBox(height: 12),
-            _buildPreviewImagem(),
-            const Divider(height: 40),
+            _secaoTitulo("Imagem do Produto", Icons.image),
+            _buildAreaUpload(),
+            const SizedBox(height: 40),
             _secaoTitulo("Dados Principais", Icons.info_outline),
             CampoFormulario(
                 controller: _nomeController,
@@ -287,11 +306,10 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
                 label: "Ex: Omo",
                 icone: Icons.copyright),
             CampoFormulario(
-              controller: _descController,
-              titulo: "Descrição",
-              label: "Ex: Produto biodegradável, fragrância floral...",
-              icone: Icons.description_outlined,
-            ),
+                controller: _descController,
+                titulo: "Descrição",
+                label: "Detalhes do produto...",
+                icone: Icons.description_outlined),
             _buildDropdownCategoria(),
             const SizedBox(height: 16),
             if (_produtoSelecionado == null) ...[
@@ -325,9 +343,6 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
               height: 55,
               child: ElevatedButton.icon(
                   onPressed: _salvar,
-                  style: ElevatedButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12))),
                   icon: const Icon(Icons.check_circle),
                   label: Text(_produtoSelecionado == null
                       ? "CADASTRAR PRODUTO"
@@ -339,23 +354,54 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
     );
   }
 
-  // --- WIDGETS DE SUPORTE ---
-
-  Widget _buildHeaderVoltar(String titulo) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: () => setState(() => _telaAtual = TelaDialog.menu),
-            icon: const Icon(Icons.arrow_back_ios, size: 20),
-          ),
-          Text(titulo,
-              style:
-                  const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        ],
+  Widget _buildAreaUpload() {
+    return GestureDetector(
+      onTap: _selecionarImagem,
+      child: Container(
+        width: double.infinity,
+        height: 160,
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(
+              color: Colors.blue.withOpacity(0.3),
+              width: 2,
+              style: BorderStyle.solid),
+        ),
+        child: _novaImagemBytes != null
+            ? ClipRRect(
+                borderRadius: BorderRadius.circular(13),
+                child: Image.memory(_novaImagemBytes!, fit: BoxFit.cover))
+            : (_urlImagemController.text.isNotEmpty
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(13),
+                    child: Image.network(_urlImagemController.text,
+                        fit: BoxFit.cover,
+                        errorBuilder: (c, e, s) =>
+                            const Icon(Icons.broken_image)))
+                : Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(Icons.cloud_upload_outlined,
+                          size: 40, color: Colors.blue),
+                      Text("Clique para selecionar foto",
+                          style: TextStyle(
+                              color: Colors.blue, fontWeight: FontWeight.bold))
+                    ],
+                  )),
       ),
     );
+  }
+
+  // --- MÉTODOS DE SUPORTE MANTIDOS ---
+  Widget _buildHeaderVoltar(String titulo) {
+    return Row(children: [
+      IconButton(
+          onPressed: () => setState(() => _telaAtual = TelaDialog.menu),
+          icon: const Icon(Icons.arrow_back_ios, size: 20)),
+      Text(titulo,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+    ]);
   }
 
   Widget _botaoOpcao(
@@ -370,49 +416,24 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-            border: Border.all(color: color.withValues(alpha: 0.2)),
+            border: Border.all(color: color.withOpacity(0.2)),
             borderRadius: BorderRadius.circular(15),
-            color: color.withValues(alpha: 0.05)),
+            color: color.withOpacity(0.05)),
         child: Row(children: [
           CircleAvatar(
-              backgroundColor: color.withValues(alpha: 0.1),
+              backgroundColor: color.withOpacity(0.1),
               child: Icon(icon, color: color)),
           const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label,
-                  style: TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold, color: color)),
-              Text(sublabel,
-                  style: TextStyle(
-                      fontSize: 12, color: color.withValues(alpha: 0.8))),
-            ],
-          ),
+          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(label,
+                style: TextStyle(
+                    fontSize: 16, fontWeight: FontWeight.bold, color: color)),
+            Text(sublabel,
+                style: TextStyle(fontSize: 12, color: color.withOpacity(0.8))),
+          ]),
           const Spacer(),
-          Icon(Icons.chevron_right, color: color)
+          const Icon(Icons.chevron_right, color: Colors.blueGrey)
         ]),
-      ),
-    );
-  }
-
-  Widget _buildPreviewImagem() {
-    return ListenableBuilder(
-      listenable: _urlImagemController,
-      builder: (context, _) => Container(
-        width: 130,
-        height: 130,
-        decoration: BoxDecoration(
-            color: Colors.grey[100],
-            borderRadius: BorderRadius.circular(15),
-            border: Border.all(color: Colors.grey[300]!)),
-        child: _urlImagemController.text.isNotEmpty
-            ? ClipRRect(
-                borderRadius: BorderRadius.circular(15),
-                child: Image.network(_urlImagemController.text,
-                    fit: BoxFit.cover,
-                    errorBuilder: (c, e, s) => const Icon(Icons.broken_image)))
-            : const Icon(Icons.image_outlined, size: 40, color: Colors.grey),
       ),
     );
   }
@@ -432,7 +453,7 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
 
   Widget _buildDropdownCategoria() {
     return DropdownButtonFormField<CategoriaProduto>(
-      initialValue: _categoria,
+      value: _categoria,
       decoration: const InputDecoration(labelText: "Categoria"),
       items: CategoriaProduto.values
           .map((c) => DropdownMenuItem(value: c, child: Text(c.name)))
@@ -446,7 +467,7 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
 
   Widget _buildDropdownUnidadeCompacta() {
     return DropdownButtonFormField<UnidadeMedida>(
-      initialValue: _unidade,
+      value: _unidade,
       decoration: const InputDecoration(labelText: "Unidade"),
       items: UnidadeMedida.values
           .map((u) => DropdownMenuItem(value: u, child: Text(u.sigla)))
@@ -462,11 +483,11 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
       children: sugestoes.map((tag) {
         final sel = _tagsSelecionadas.contains(tag);
         return FilterChip(
-          label: Text(tag),
-          selected: sel,
-          onSelected: (v) => setState(() =>
-              v ? _tagsSelecionadas.add(tag) : _tagsSelecionadas.remove(tag)),
-        );
+            label: Text(tag),
+            selected: sel,
+            onSelected: (v) => setState(() => v
+                ? _tagsSelecionadas.add(tag)
+                : _tagsSelecionadas.remove(tag)));
       }).toList(),
     );
   }

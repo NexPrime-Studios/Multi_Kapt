@@ -119,7 +119,7 @@ class _DialogCadastroFuncionarioState extends State<DialogCadastroFuncionario> {
                   const SizedBox(height: 15),
                   // Dropdown Corrigido
                   DropdownButtonFormField<CargoAcesso>(
-                    value: _cargoSelecionado,
+                    initialValue: _cargoSelecionado,
                     items: CargoAcesso.values.map((cargo) {
                       return DropdownMenuItem(
                         value: cargo,

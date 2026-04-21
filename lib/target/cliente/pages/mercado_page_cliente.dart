@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../models/mercado.dart';
 import '../../../models/produto.dart';
 import '../../../models/produto_enums.dart';
-import '../../../services/cliente_service.dart';
+import '../../../services/usuario_service.dart';
 import '../widgets/card_produto_mercado.dart';
 import '../widgets/botao_carrinho_flutuante.dart';
 import '../widgets/categorias_selector.dart';
@@ -19,7 +19,7 @@ class MercadoPaginaCliente extends StatefulWidget {
 }
 
 class _MercadoPaginaClienteState extends State<MercadoPaginaCliente> {
-  final ClienteService _service = ClienteService();
+  final UsuarioService _service = UsuarioService();
   final String _termoBuscaInterna = "";
   CategoriaProduto? _categoriaSelecionada;
   List<Produto> _todosOsProdutos = [];
