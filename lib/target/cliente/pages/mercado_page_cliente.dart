@@ -3,11 +3,11 @@ import '../../../models/mercado.dart';
 import '../../../models/produto.dart';
 import '../../../models/produto_enums.dart';
 import '../../../services/shared/usuario_service.dart';
-import '../widgets/card_produto_mercado.dart';
+import '../widgets/mercado_widgets/card_produto_mercado.dart';
 import '../widgets/botao_carrinho_flutuante.dart';
-import '../widgets/categorias_selector.dart';
-import '../widgets/mercado_header_sliver.dart';
-import '../widgets/pesquisa_produtos_delegate.dart'; // Import do seu novo script
+import '../widgets/mercado_widgets/categorias_selector.dart';
+import '../widgets/mercado_widgets/mercado_header_sliver.dart';
+import '../widgets/mercado_widgets/pesquisar_produtos_mercado.dart';
 import 'tela_carrinho.dart';
 
 class MercadoPaginaCliente extends StatefulWidget {
@@ -30,27 +30,23 @@ class _MercadoPaginaClienteState extends State<MercadoPaginaCliente> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      // --- BOTÕES FLUTUANTES SOBREPOSTOS ---
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Botão de Pesquisa (Novo)
           FloatingActionButton(
-            heroTag: 'btn-pesquisa-mercado', // Hero tag única para evitar erros
+            heroTag: 'btn-pesquisa-mercado',
             onPressed: () => showSearch(
               context: context,
-              delegate: PesquisaProdutosMercadoDelegate(
+              delegate: PesquisarProdutosNoMercadoPage(
                 mercado: widget.mercado,
                 produtos: _todosOsProdutos,
               ),
             ),
             backgroundColor: cores.primary,
-            mini:
-                true, // Botão um pouco menor que o do carrinho para harmonia visual
+            mini: true,
             child: const Icon(Icons.search, color: Colors.white),
           ),
-          const SizedBox(height: 12), // Espaço entre os botões
-          // Botão do Carrinho (Existente)
+          const SizedBox(height: 12),
           BotaoCarrinhoFlutuante(
             aoPressionar: () async {
               final sucesso = await Navigator.push(
@@ -88,14 +84,13 @@ class _MercadoPaginaClienteState extends State<MercadoPaginaCliente> {
     );
   }
 
-  // Mantive a barra de busca fixa por precaução, mas agora o FAB também faz o serviço
   Widget _buildSearchBar(ColorScheme cores) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: InkWell(
         onTap: () => showSearch(
           context: context,
-          delegate: PesquisaProdutosMercadoDelegate(
+          delegate: PesquisarProdutosNoMercadoPage(
             mercado: widget.mercado,
             produtos: _todosOsProdutos,
           ),
@@ -148,13 +143,34 @@ class _MercadoPaginaClienteState extends State<MercadoPaginaCliente> {
 
         _todosOsProdutos = snapshot.data!;
 
-        final filtrados = _todosOsProdutos.where((p) {
-          final matchesBusca =
-              p.nome.toLowerCase().contains(_termoBuscaInterna.toLowerCase());
+        // --- LÓGICA DE FILTRAGEM ATUALIZADA ---
+        final filtrados = _todosOsProdutos.where((prod) {
+          // Busca o item correspondente no mercado para verificar a disponibilidade
+          final itemNoMercado = widget.mercado.itens.firstWhere(
+            (it) => it.produtoId == prod.id,
+          );
+
+          // Regra 1: Verificar se o produto está marcado como disponível no mercado
+          final estaDisponivel = itemNoMercado.disponivel;
+
+          // Regra 2: Termo de busca (se houver)
+          final matchesBusca = prod.nome
+              .toLowerCase()
+              .contains(_termoBuscaInterna.toLowerCase());
+
+          // Regra 3: Categoria selecionada
           final matchesCat = _categoriaSelecionada == null ||
-              p.categoria == _categoriaSelecionada;
-          return matchesBusca && matchesCat;
+              prod.categoria == _categoriaSelecionada;
+
+          // Retorna apenas se estiver disponível E bater com os outros filtros
+          return estaDisponivel && matchesBusca && matchesCat;
         }).toList();
+
+        if (filtrados.isEmpty) {
+          return const SliverToBoxAdapter(
+            child: Center(child: Text("Nenhum produto disponível no momento.")),
+          );
+        }
 
         return SliverGrid(
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(

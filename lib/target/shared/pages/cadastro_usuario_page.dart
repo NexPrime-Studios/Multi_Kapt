@@ -14,6 +14,7 @@ import '../../../services/shared/auth_service.dart';
 
 // Componentes de UI
 import '../global_widgets/botao_selecionar_localizacao_widget.dart';
+import '../global_widgets/campo_cep_widget.dart';
 import '../global_widgets/campo_senha_widget.dart';
 import '../global_widgets/campo_texto_widget.dart';
 import '../global_widgets/campo_cpf_widget.dart';
@@ -221,10 +222,7 @@ class _CadastroUsuarioState extends State<CadastroUsuario> {
                               controller: _nascimentoController),
                           const SizedBox(height: 24),
                           _buildSecaoTitulo("Endereço"),
-                          CampoTextoWidget(
-                              label: "CEP",
-                              controller: _cepController,
-                              icon: Icons.location_on_outlined),
+                          CampoCepWidget(controller: _cepController),
                           CampoTextoWidget(
                               label: "Estado",
                               controller: _estadoController,
@@ -276,7 +274,8 @@ class _CadastroUsuarioState extends State<CadastroUsuario> {
                           CampoTextoWidget(
                               label: "Complemento (Opcional)",
                               controller: _complementoController,
-                              icon: Icons.info_outline),
+                              icon: Icons.info_outline,
+                              validator: (valor) => null),
                           const SizedBox(height: 10),
                           CampoSelecionarLocalizacaoWidget(
                             latitude: _lat,

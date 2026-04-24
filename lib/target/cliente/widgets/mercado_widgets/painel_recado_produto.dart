@@ -1,17 +1,16 @@
 // lib/target/cliente/widgets/dialog_observacao_produto.dart
 import 'package:flutter/material.dart';
 
-class DialogObservacaoProduto extends StatefulWidget {
+class PainelRecadoProduto extends StatefulWidget {
   final String observacaoInicial;
 
-  const DialogObservacaoProduto({super.key, required this.observacaoInicial});
+  const PainelRecadoProduto({super.key, required this.observacaoInicial});
 
   @override
-  State<DialogObservacaoProduto> createState() =>
-      _DialogObservacaoProdutoState();
+  State<PainelRecadoProduto> createState() => _PainelRecadoProdutoState();
 }
 
-class _DialogObservacaoProdutoState extends State<DialogObservacaoProduto> {
+class _PainelRecadoProdutoState extends State<PainelRecadoProduto> {
   late TextEditingController _controller;
 
   @override

@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:in_app_update/in_app_update.dart';
 
 // Importações dos serviços e modelos
 import 'package:mercado_app/services/cliente/carrinho_service.dart';
@@ -87,8 +88,45 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Multi Kapt',
       theme: AppTheme.lightTheme,
-      home: const PlatformSelector(),
+      home: const UpdateChecker(child: PlatformSelector()),
     );
+  }
+}
+
+class UpdateChecker extends StatefulWidget {
+  final Widget child;
+  const UpdateChecker({super.key, required this.child});
+
+  @override
+  State<UpdateChecker> createState() => _UpdateCheckerState();
+}
+
+class _UpdateCheckerState extends State<UpdateChecker> {
+  @override
+  void initState() {
+    super.initState();
+    // Só verifica se for Android e não for Web
+    if (!kIsWeb && Platform.isAndroid) {
+      _verificarAtualizacao();
+    }
+  }
+
+  Future<void> _verificarAtualizacao() async {
+    try {
+      final info = await InAppUpdate.checkForUpdate();
+      if (info.updateAvailability == UpdateAvailability.updateAvailable) {
+        // Opção 1: performImmediateUpdate (Trava o app até atualizar)
+        // Opção 2: showUpdateDialog (Aviso nativo do Google)
+        await InAppUpdate.performImmediateUpdate();
+      }
+    } catch (e) {
+      debugPrint("Play Store Update Error: $e");
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return widget.child;
   }
 }
 

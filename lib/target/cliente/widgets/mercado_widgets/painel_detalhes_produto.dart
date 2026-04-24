@@ -2,12 +2,12 @@
 import 'package:flutter/material.dart';
 import 'package:mercado_app/models/produto_enums.dart';
 import 'package:provider/provider.dart';
-import '../../../models/produto.dart';
-import '../../../models/item_mercado.dart';
-import '../../../models/mercado.dart';
-import '../../../services/cliente/carrinho_service.dart';
-import 'seletor_quantidade_widget.dart';
-import '../widgets/mercado_widgets/dialog_observacao_produto.dart';
+import '../../../../models/produto.dart';
+import '../../../../models/item_mercado.dart';
+import '../../../../models/mercado.dart';
+import '../../../../services/cliente/carrinho_service.dart';
+import '../seletor_quantidade_widget.dart';
+import 'painel_recado_produto.dart';
 
 class DetalhesProdutoWidget extends StatefulWidget {
   final Produto produto;
@@ -345,7 +345,7 @@ class _DetalhesProdutoWidgetState extends State<DetalhesProdutoWidget> {
       onTap: () async {
         final resultado = await showDialog<String>(
           context: context,
-          builder: (context) => DialogObservacaoProduto(
+          builder: (context) => PainelRecadoProduto(
             observacaoInicial: _obsController.text,
           ),
         );

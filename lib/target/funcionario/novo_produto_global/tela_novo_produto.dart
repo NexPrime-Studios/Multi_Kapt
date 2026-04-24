@@ -6,10 +6,8 @@ import 'package:mercado_app/target/funcionario/novo_produto_global/buscar_dados_
 import '../../../../models/produto_enums.dart';
 import '../../../../models/tags_helper.dart';
 import '../../../models/produto.dart';
-import '../../../services/funcionario/funcionario_service.dart';
 import '../../../services/shared/imagem_service.dart';
 import '../../../services/shared/mercado_shared_provider.dart';
-import 'scanner_manual_page.dart';
 import 'package:mercado_app/target/funcionario/novo_produto_global/buscar_imagem_produto.dart';
 
 import '../../shared/global_widgets/campo_texto_widget.dart';
@@ -17,7 +15,9 @@ import '../../shared/global_widgets/dropdown_categoria_widget.dart';
 import '../../shared/global_widgets/dropdown_unidade_widget.dart';
 
 class TelaNovoProduto extends StatefulWidget {
-  const TelaNovoProduto({super.key});
+  final String codigoBarras; // Agora recebe o código como parâmetro obrigatório
+
+  const TelaNovoProduto({super.key, required this.codigoBarras});
 
   @override
   State<TelaNovoProduto> createState() => _TelaNovoProdutoState();
@@ -30,7 +30,7 @@ class _TelaNovoProdutoState extends State<TelaNovoProduto> {
   final _buscarDescricaoService = BuscarDadosIAProduto();
 
   // Controllers
-  final _codigoController = TextEditingController();
+  late final TextEditingController _codigoController;
   final _nomeController = TextEditingController();
   final _marcaController = TextEditingController();
   final _descricaoController = TextEditingController();
@@ -43,122 +43,29 @@ class _TelaNovoProdutoState extends State<TelaNovoProduto> {
   final List<String> _tagsSelecionadas = [];
 
   // Estado de UI
-  bool _carregando = true;
+  bool _carregando = false;
   bool _salvando = false;
   bool _tagErro = false;
 
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => _fluxoInicialScanner());
+    // Inicializa o controller com o código recebido
+    _codigoController = TextEditingController(text: widget.codigoBarras);
   }
 
-  void _fluxoInicialScanner() async {
-    final String? codigoRecebido = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const ScannerManualPage()),
-    );
-
-    if (codigoRecebido != null && mounted) {
-      setState(() => _carregando = true);
-
-      try {
-        final Produto? produtoExistente =
-            await _mercadorSharedProvider.buscarProdutoGlobal(codigoRecebido);
-
-        if (!mounted) return;
-
-        if (produtoExistente != null) {
-          _mostrarAvisoProdutoExistente(codigoRecebido, produtoExistente.nome);
-          setState(() => _carregando = false);
-        } else {
-          setState(() {
-            _codigoController.text = codigoRecebido;
-            _carregando = false;
-          });
-        }
-      } catch (e) {
-        debugPrint("Erro ao processar código recebido: $e");
-        if (mounted) setState(() => _carregando = false);
-      }
-    } else {
-      if (mounted) setState(() => _carregando = false);
-    }
+  @override
+  void dispose() {
+    _codigoController.dispose();
+    _nomeController.dispose();
+    _marcaController.dispose();
+    _descricaoController.dispose();
+    _valorMedidaController.dispose();
+    super.dispose();
   }
 
-  void _mostrarAvisoProdutoExistente(String codigo, String nomeProduto) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        // Usando uma Column simples no title para evitar o Row Overflow
-        title: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 40),
-            SizedBox(height: 8),
-            Text("Produto já cadastrado"),
-          ],
-        ),
-        content: SingleChildScrollView(
-          child: ListBody(
-            children: [
-              const Text("Este código de barras já consta em nossa base:"),
-              const SizedBox(height: 12),
-              Text(
-                codigo,
-                style:
-                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey.shade300)),
-                child: Text(
-                  nomeProduto,
-                  style: const TextStyle(
-                    fontStyle: FontStyle.italic,
-                    color: Colors.black87,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text("Não é necessário cadastrá-lo novamente."),
-            ],
-          ),
-        ),
-        actions: [
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () {
-              Navigator.pop(context); // Fecha o dialog
-              Navigator.pop(context); // Sai da tela de cadastro
-            },
-            child: const Text("ENTENDIDO"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Função disparada pelo botão na seção de imagem
   Future<void> _buscarImagemManualmente() async {
-    if (_codigoController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Escaneie o código primeiro!")),
-      );
-      return;
-    }
-
     setState(() => _carregando = true);
-
     try {
       final Uint8List? imagem = await BuscarImagemProduto()
           .buscarProduto(context, _codigoController.text);
@@ -183,7 +90,7 @@ class _TelaNovoProdutoState extends State<TelaNovoProduto> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Novo Produto"),
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        backgroundColor: colorScheme.primary,
         foregroundColor: Colors.white,
       ),
       body: _carregando || _salvando
@@ -222,13 +129,10 @@ class _TelaNovoProdutoState extends State<TelaNovoProduto> {
                                   icon: Icons.auto_awesome_rounded,
                                   colorScheme: colorScheme,
                                   onPressed: () async {
-                                    if (_codigoController.text.isEmpty) return;
-
                                     final String? nome =
                                         await _buscarDescricaoService
                                             .selecionarDado(context,
                                                 _codigoController.text, true);
-
                                     if (nome != null) {
                                       setState(
                                           () => _nomeController.text = nome);
@@ -239,13 +143,17 @@ class _TelaNovoProdutoState extends State<TelaNovoProduto> {
                             ],
                           ),
 
+                          // Campo Marca (UpperCase)
                           CampoTextoWidget(
                             label: "Marca / Fabricante",
                             controller: _marcaController,
                             icon: Icons.factory_outlined,
+                            formatters: [
+                              UpperCaseTextFormatter(), // Formata em tempo real
+                            ],
                           ),
 
-                          // Campo Descrição + Sugestão
+                          // Campo Descrição
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -264,17 +172,10 @@ class _TelaNovoProdutoState extends State<TelaNovoProduto> {
                                   icon: Icons.auto_awesome_rounded,
                                   colorScheme: colorScheme,
                                   onPressed: () async {
-                                    if (_codigoController.text.isEmpty) return;
-
-                                    // Agora chama selecionarDado passando 'false' para modo Descrição
                                     final String? desc =
                                         await _buscarDescricaoService
-                                            .selecionarDado(
-                                                context,
-                                                _codigoController.text,
-                                                false // modoNome = false
-                                                );
-
+                                            .selecionarDado(context,
+                                                _codigoController.text, false);
                                     if (desc != null) {
                                       setState(() =>
                                           _descricaoController.text = desc);
@@ -362,27 +263,100 @@ class _TelaNovoProdutoState extends State<TelaNovoProduto> {
     );
   }
 
-  // Componentes Auxiliares
-  Widget _buildBotaoSugestao(
-      {required IconData icon,
-      required ColorScheme colorScheme,
-      required VoidCallback onPressed}) {
-    return Container(
-      height: 50,
-      width: 50,
-      child: IconButton.filled(
-        onPressed: onPressed,
-        style: IconButton.styleFrom(
-          backgroundColor: colorScheme.secondary.withOpacity(0.1),
-          foregroundColor: colorScheme.secondary,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: colorScheme.secondary.withOpacity(0.2)),
-          ),
-        ),
-        icon: Icon(icon),
-      ),
+  // --- WIDGETS AUXILIARES ---
+
+  Widget _buildBotaoSalvar(ColorScheme colorScheme) {
+    return ElevatedButton(
+      onPressed: _salvando
+          ? null
+          : () async {
+              final formValido = _formKey.currentState!.validate();
+              setState(() => _tagErro = _tagsSelecionadas.isEmpty);
+
+              if (_imagemBytes == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text("É obrigatório ter uma imagem do produto!"),
+                      backgroundColor: Colors.redAccent),
+                );
+                return;
+              }
+
+              if (formValido && !_tagErro) {
+                setState(() => _salvando = true);
+                try {
+                  String idProduto =
+                      DateTime.now().millisecondsSinceEpoch.toString();
+
+                  final fotoUrl = await _imagemService.uploadProdutoImage(
+                    bytes: _imagemBytes!,
+                    produtoId: idProduto,
+                  );
+
+                  if (fotoUrl == null)
+                    throw Exception("Falha ao fazer upload da imagem.");
+
+                  String nomeFinal = _nomeController.text.trim();
+                  if (_valorMedidaController.text.isNotEmpty) {
+                    nomeFinal +=
+                        " ${_valorMedidaController.text}${_unidade.sigla}";
+                  }
+
+                  final novoProduto = Produto(
+                    id: '',
+                    nome: nomeFinal,
+                    descricao: _descricaoController.text.trim(),
+                    fotoUrl: fotoUrl,
+                    marca: _marcaController.text
+                        .trim()
+                        .toUpperCase(), // Final UpperCase
+                    codigoBarras: _codigoController.text.trim(),
+                    categoria: _categoria,
+                    unidadeMedida: _unidade,
+                    tags: _tagsSelecionadas,
+                  );
+
+                  await _mercadorSharedProvider
+                      .cadastrarProdutoGlobal(novoProduto);
+                  GeminiService.limparCache();
+
+                  if (!mounted) return;
+
+                  // Retorna true para fechar a tela anterior também
+                  Navigator.pop(context, true);
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text("✅ Produto Cadastrado com Sucesso!"),
+                        backgroundColor: Colors.green),
+                  );
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                          content: Text("Erro ao salvar: $e"),
+                          backgroundColor: Colors.red),
+                    );
+                  }
+                } finally {
+                  if (mounted) setState(() => _salvando = false);
+                }
+              }
+            },
+      child: _salvando
+          ? const SizedBox(
+              height: 20,
+              width: 20,
+              child: CircularProgressIndicator(
+                  color: Colors.white, strokeWidth: 2))
+          : const Text("CADASTRAR PRODUTO"),
     );
+  }
+
+  // Métodos de UI permanecem similares, mas adaptados
+  Widget _buildLoadingState(ColorScheme colorScheme) {
+    return Center(
+        child: CircularProgressIndicator(color: colorScheme.secondary));
   }
 
   Widget _buildSectionTitle(ColorScheme colorScheme, String title) {
@@ -462,19 +436,12 @@ class _TelaNovoProdutoState extends State<TelaNovoProduto> {
                     size: 40, color: colorScheme.secondary.withOpacity(0.5)),
           ),
         ),
-        // Botão para carregar imagem via Web/IA
         Positioned(
           bottom: -10,
           right: -10,
           child: IconButton.filled(
             onPressed: _buscarImagemManualmente,
-            style: IconButton.styleFrom(
-              backgroundColor: colorScheme.secondary,
-              foregroundColor: colorScheme.primary,
-              elevation: 4,
-            ),
             icon: const Icon(Icons.auto_awesome_rounded),
-            tooltip: "Buscar imagem online",
           ),
         ),
       ],
@@ -502,122 +469,34 @@ class _TelaNovoProdutoState extends State<TelaNovoProduto> {
             });
           },
           selectedColor: colorScheme.secondary,
-          checkmarkColor: colorScheme.primary,
-          labelStyle: TextStyle(
-            color: isSelected ? colorScheme.primary : colorScheme.onSurface,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          ),
-          backgroundColor: colorScheme.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(
-              color: isSelected
-                  ? colorScheme.secondary
-                  : colorScheme.outline.withOpacity(0.2),
-            ),
-          ),
         );
       }).toList(),
     );
   }
 
-  Widget _buildBotaoSalvar(ColorScheme colorScheme) {
-    return ElevatedButton(
-      onPressed: _salvando
-          ? null
-          : () async {
-              // Evita múltiplos cliques
-              final formValido = _formKey.currentState!.validate();
-
-              setState(() => _tagErro = _tagsSelecionadas.isEmpty);
-
-              if (_imagemBytes == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("É obrigatório ter uma imagem do produto!"),
-                    backgroundColor: Colors.redAccent,
-                  ),
-                );
-                return;
-              }
-
-              if (formValido && !_tagErro) {
-                setState(() => _salvando = true);
-
-                try {
-                  String idProduto =
-                      DateTime.now().millisecondsSinceEpoch.toString();
-
-                  // 2. Fazer Upload da Imagem
-                  final fotoUrl = await _imagemService.uploadProdutoImage(
-                    bytes: _imagemBytes!,
-                    produtoId: idProduto,
-                  );
-
-                  if (fotoUrl == null)
-                    throw Exception("Falha ao fazer upload da imagem.");
-
-                  String nomeFinal = _nomeController.text.trim();
-                  if (_valorMedidaController.text.isNotEmpty) {
-                    nomeFinal +=
-                        " ${_valorMedidaController.text}${_unidade.sigla}";
-                  }
-
-                  final novoProduto = Produto(
-                    id: '',
-                    nome: nomeFinal,
-                    descricao: _descricaoController.text.trim(),
-                    fotoUrl: fotoUrl,
-                    marca: _marcaController.text.trim().toUpperCase(),
-                    codigoBarras: _codigoController.text.trim(),
-                    categoria: _categoria,
-                    unidadeMedida: _unidade,
-                    tags: _tagsSelecionadas,
-                  );
-
-                  // 5. Salvar no Banco via provider
-                  await _mercadorSharedProvider
-                      .cadastrarProdutoGlobal(novoProduto);
-
-                  GeminiService.limparCache();
-
-                  if (!mounted) return;
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text("✅ Produto Cadastrado com Sucesso!"),
-                        backgroundColor: Colors.green),
-                  );
-                } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                          content: Text("Erro ao salvar: $e"),
-                          backgroundColor: Colors.red),
-                    );
-                  }
-                } finally {
-                  if (mounted) setState(() => _salvando = false);
-                }
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text("Preencha todos os campos e tags.")),
-                );
-              }
-            },
-      child: _salvando
-          ? const SizedBox(
-              height: 20,
-              width: 20,
-              child: CircularProgressIndicator(
-                  color: Colors.white, strokeWidth: 2))
-          : const Text("CADASTRAR PRODUTO"),
+  Widget _buildBotaoSugestao(
+      {required IconData icon,
+      required ColorScheme colorScheme,
+      required VoidCallback onPressed}) {
+    return SizedBox(
+      height: 50,
+      width: 50,
+      child: IconButton.filled(
+        onPressed: onPressed,
+        style: IconButton.styleFrom(
+            backgroundColor: colorScheme.secondary.withOpacity(0.1),
+            foregroundColor: colorScheme.secondary),
+        icon: Icon(icon),
+      ),
     );
   }
+}
 
-  Widget _buildLoadingState(ColorScheme colorScheme) {
-    return Center(
-        child: CircularProgressIndicator(color: colorScheme.secondary));
+/// Helper para converter texto em maiúsculo enquanto digita
+class UpperCaseTextFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    return newValue.copyWith(text: newValue.text.toUpperCase());
   }
 }

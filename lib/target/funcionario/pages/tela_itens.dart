@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mercado_app/models/produto.dart';
-import 'package:mercado_app/target/funcionario/novo_produto_global/tela_novo_produto.dart';
+import 'package:mercado_app/target/funcionario/novo_produto_global/verificacao_produto_page.dart';
 import 'package:provider/provider.dart';
 import '../../../models/item_mercado.dart';
 import '../../../services/shared/mercado_shared_provider.dart';
@@ -20,7 +20,7 @@ class _TelaItensMercadoState extends State<TelaItensMercado> {
   void _criarNovoItemGlobal() async {
     final String? codigoBarras = await Navigator.push<String>(
       context,
-      MaterialPageRoute(builder: (context) => const TelaNovoProduto()),
+      MaterialPageRoute(builder: (context) => const VerificacaoProdutoPage()),
     );
 
     if (codigoBarras != null) {

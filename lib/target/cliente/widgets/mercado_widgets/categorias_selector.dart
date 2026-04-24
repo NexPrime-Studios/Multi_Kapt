@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../models/produto_enums.dart';
+import '../../../../models/produto_enums.dart';
 
 class CategoriasSelector extends StatelessWidget {
   final List<CategoriaProduto> categorias;

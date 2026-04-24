@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../models/mercado.dart';
+import '../../../../models/mercado.dart';
 
 class MercadoHeaderSliver extends StatelessWidget {
   final Mercado mercado;

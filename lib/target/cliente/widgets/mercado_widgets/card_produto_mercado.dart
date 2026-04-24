@@ -1,8 +1,8 @@
 // lib/target/cliente/widgets/card_produto_mercado.dart
 import 'package:flutter/material.dart';
-import '../../../models/produto.dart';
-import '../../../models/item_mercado.dart';
-import '../../../models/mercado.dart';
+import '../../../../models/produto.dart';
+import '../../../../models/item_mercado.dart';
+import '../../../../models/mercado.dart';
 import 'painel_detalhes_produto.dart';
 
 class CardProdutoMercado extends StatelessWidget {
