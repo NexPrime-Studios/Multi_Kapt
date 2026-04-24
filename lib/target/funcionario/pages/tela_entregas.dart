@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import '../../../services/funcionario_provider.dart';
-import '../../../services/funcionario_service.dart';
+import '../../../services/funcionario/funcionario_provider.dart';
+import '../../../services/funcionario/funcionario_service.dart';
 import '../../../models/funcionario.dart';
 import '../../../models/item_pedido.dart';
 

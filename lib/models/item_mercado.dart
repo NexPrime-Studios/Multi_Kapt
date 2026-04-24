@@ -35,41 +35,34 @@ class ItemMercado {
 
   factory ItemMercado.fromMap(Map<String, dynamic> map) {
     return ItemMercado(
-      produtoId: map['produtoId'] ??
-          map['id'] ??
-          '', // Fallback para 'id' se necessário
-      produtoNome: map['produtoNome'] ?? map['nome'] ?? 'Produto sem nome',
-      produtoImagem: map['produtoImagem'] ?? map['imagem_url'] ?? '',
-      produtoCategoria: map['produtoCategoria'] ?? map['categoria'] ?? '',
-      codigoBarras: map['codigo_barras'] ?? map['codigoBarras'] ?? '',
+      produtoId: map['produto_id'] ?? '',
+      produtoNome: map['produto_nome'] ?? 'Produto sem nome',
+      produtoImagem: map['produto_imagem'] ?? '',
+      produtoCategoria: map['produto_categoria'] ?? '',
+      codigoBarras: map['codigo_barras'] ?? '',
       preco: (map['preco'] ?? 0.0).toDouble(),
-      precoPromocional: map['precoPromocional']?.toDouble() ??
-          map['preco_promocional']?.toDouble(),
-      inicioPromocao: map['inicioPromocao'] != null
-          ? DateTime.parse(map['inicioPromocao'])
-          : (map['inicio_promocao'] != null
-              ? DateTime.parse(map['inicio_promocao'])
-              : null),
-      fimPromocao: map['fimPromocao'] != null
-          ? DateTime.parse(map['fimPromocao'])
-          : (map['fim_promocao'] != null
-              ? DateTime.parse(map['fim_promocao'])
-              : null),
+      precoPromocional: map['preco_promocional']?.toDouble(),
+      inicioPromocao: map['inicio__promocao'] != null
+          ? DateTime.parse(map['inicio_promocao'])
+          : null,
+      fimPromocao: map['fim_promocao'] != null
+          ? DateTime.parse(map['fim_promocao'])
+          : null,
       disponivel: map['disponivel'] ?? true,
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
-      'produtoId': produtoId,
-      'produtoNome': produtoNome,
-      'produtoImagem': produtoImagem,
-      'produtoCategoria': produtoCategoria,
+      'produto_id': produtoId,
+      'produto_nome': produtoNome,
+      'produto_imagem': produtoImagem,
+      'produto_categoria': produtoCategoria,
       'codigo_barras': codigoBarras,
       'preco': preco,
-      'precoPromocional': precoPromocional,
-      'inicioPromocao': inicioPromocao?.toIso8601String(),
-      'fimPromocao': fimPromocao?.toIso8601String(),
+      'preco_promocional': precoPromocional,
+      'inicio_promocao': inicioPromocao?.toIso8601String(),
+      'fim_promocao': fimPromocao?.toIso8601String(),
       'disponivel': disponivel,
     };
   }

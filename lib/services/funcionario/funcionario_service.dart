@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:mercado_app/models/item_mercado.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../models/funcionario.dart';
-import '../models/mercado.dart';
+import '../../models/funcionario.dart';
+import '../../models/mercado.dart';
+import '../../models/produto.dart';
 
 class FuncionarioService {
   final _supabase = Supabase.instance.client;
@@ -219,6 +221,65 @@ class FuncionarioService {
     } catch (e) {
       debugPrint("Erro ao buscar produto no JSON do mercado: $e");
       return null;
+    }
+  }
+
+  Future<String?> buscarNomeSeProdutoExiste(String codigo) async {
+    try {
+      final response = await _supabase
+          .from('produtos')
+          .select('nome')
+          .eq('codigo_barras', codigo)
+          .maybeSingle();
+
+      return response?['nome'] as String?; // Retorna o nome ou null
+    } catch (e) {
+      debugPrint("Erro ao verificar existência do produto: $e");
+      return null;
+    }
+  }
+
+  Future<List<Produto>> buscarProdutosGlobais({String termo = ""}) async {
+    try {
+      var query = _supabase.from('produtos').select();
+
+      if (termo.isNotEmpty) {
+        query = query.or('nome.ilike.%$termo%,codigo_barras.ilike.%$termo%');
+      }
+
+      final response = await query.order('nome', ascending: true);
+
+      return (response as List)
+          .map((map) => Produto.fromMap(map['id'], map))
+          .toList();
+    } catch (e) {
+      debugPrint("Erro ao buscar produtos globais: $e");
+      return [];
+    }
+  }
+
+  Future<void> adicionarItemAoInventario(
+      String mercadoId, ItemMercado novoItem) async {
+    try {
+      // 1. Busca os itens atuais do mercado
+      final res = await _supabase
+          .from('mercados')
+          .select('itens')
+          .eq('id', mercadoId)
+          .single();
+
+      List itens = res['itens'] ?? [];
+
+      // 2. Adiciona o novo item (convertido para Map)
+      itens.add(novoItem.toMap());
+
+      // 3. Atualiza a tabela mercados
+      await _supabase
+          .from('mercados')
+          .update({'itens': itens}).eq('id', mercadoId);
+    } catch (e) {
+      debugPrint("Erro ao adicionar item ao inventário: $e");
+      rethrow;
     }
   }
 }

@@ -2,16 +2,17 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../../../services/usuario_provider.dart';
+import '../../../services/shared/usuario_provider.dart';
 
-class SeletorCidadeDashboard extends StatefulWidget {
-  const SeletorCidadeDashboard({super.key});
+class SeletorLocalizacaoWidget extends StatefulWidget {
+  const SeletorLocalizacaoWidget({super.key});
 
   @override
-  State<SeletorCidadeDashboard> createState() => _SeletorCidadeDashboardState();
+  State<SeletorLocalizacaoWidget> createState() =>
+      _SeletorLocalizacaoWidgetState();
 }
 
-class _SeletorCidadeDashboardState extends State<SeletorCidadeDashboard> {
+class _SeletorLocalizacaoWidgetState extends State<SeletorLocalizacaoWidget> {
   List<dynamic> _municipiosBase = [];
   List<String> _estados = [];
   bool _carregando = true;
@@ -27,7 +28,6 @@ class _SeletorCidadeDashboardState extends State<SeletorCidadeDashboard> {
 
   Future<void> _carregarDadosIniciais() async {
     try {
-      // Caminho corrigido conforme sua verificação
       final String response =
           await rootBundle.loadString('assets/municipios.json');
       final Map<String, dynamic> decoded = json.decode(response);
@@ -43,13 +43,19 @@ class _SeletorCidadeDashboardState extends State<SeletorCidadeDashboard> {
       }
 
       if (!mounted) return;
-      final cliente = context.read<UsuarioProvider>().usuario;
-      if (cliente != null) {
-        _estadoController.text = cliente.estado;
-        _cidadeController.text = cliente.cidade;
-      }
 
-      setState(() => _carregando = false);
+      final provider = context.read<UsuarioProvider>();
+      final cliente = provider.usuario;
+
+      // Carrega os dados existentes (prioriza o objeto cliente, depois o provider)
+      String estadoInicial = cliente?.estado ?? provider.estado;
+      String cidadeInicial = cliente?.cidade ?? provider.cidade;
+
+      setState(() {
+        _estadoController.text = estadoInicial;
+        _cidadeController.text = cidadeInicial;
+        _carregando = false;
+      });
     } catch (e) {
       debugPrint("Erro ao carregar dados de localização: $e");
       if (mounted) setState(() => _carregando = false);
@@ -71,22 +77,26 @@ class _SeletorCidadeDashboardState extends State<SeletorCidadeDashboard> {
     final provider = context.read<UsuarioProvider>();
     final clienteAtual = provider.usuario;
 
-    if (clienteAtual == null) return;
+    final novaCidade = _cidadeController.text;
+    final novoEstado = _estadoController.text;
 
-    final clienteAtualizado = clienteAtual.copyWith(
-      estado: _estadoController.text,
-      cidade: _cidadeController.text,
-    );
+    if (clienteAtual != null) {
+      final clienteAtualizado = clienteAtual.copyWith(
+        estado: novoEstado,
+        cidade: novaCidade,
+      );
+      provider.salvarEAtualizarPerfil(clienteAtualizado);
+    } else {
+      provider.definirLocalizacaoLocal(novaCidade, novoEstado);
+    }
 
-    provider.salvarEAtualizarPerfil(clienteAtualizado);
-
-    // Fecha o Pop-up
-    Navigator.of(context).pop();
+    if (mounted) Navigator.of(context).pop();
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Região de busca atualizada!"),
-        duration: Duration(seconds: 2),
+      SnackBar(
+        content: Text("Região atualizada para $novaCidade - $novoEstado!"),
+        backgroundColor: Colors.green[700],
+        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -94,19 +104,12 @@ class _SeletorCidadeDashboardState extends State<SeletorCidadeDashboard> {
   @override
   Widget build(BuildContext context) {
     if (_carregando) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(20.0),
-          child: CircularProgressIndicator(),
-        ),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     return Material(
-      // Garante que elementos de texto e campos tenham o tema correto
       color: Colors.transparent,
       child: Container(
-        // O próprio script decide o tamanho agora
         width: MediaQuery.of(context).size.width * 0.9,
         constraints: const BoxConstraints(maxWidth: 450),
         padding: const EdgeInsets.all(20),
@@ -115,30 +118,37 @@ class _SeletorCidadeDashboardState extends State<SeletorCidadeDashboard> {
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
-          mainAxisSize:
-              MainAxisSize.min, // Faz o pop-up não esticar verticalmente
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "Onde você está?",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-                color: Colors.blueGrey,
-              ),
+            Row(
+              children: [
+                Icon(Icons.location_on_rounded, color: Colors.blue[700]),
+                const SizedBox(width: 8),
+                const Text(
+                  "Onde você quer pesquisar?",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: Colors.blueGrey,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 20),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Largura fixa para UF evita o "Left Overflow"
+                // --- DROPDOWN UF COM CORREÇÃO DE ASSERTION ---
                 SizedBox(
-                  width: 85,
+                  width: 90,
                   child: DropdownButtonFormField<String>(
-                    initialValue: _estadoController.text.isEmpty
-                        ? null
-                        : _estadoController.text,
-                    isExpanded: true, // Garante que a seta não empurre o layout
+                    // AQUI ESTÁ A CORREÇÃO:
+                    // Se o estado salvo não existir na lista do JSON, fica null e não quebra.
+                    value: _estados.contains(_estadoController.text)
+                        ? _estadoController.text
+                        : null,
+                    isExpanded: true,
                     decoration: InputDecoration(
                       labelText: "UF",
                       contentPadding: const EdgeInsets.symmetric(horizontal: 8),
@@ -160,7 +170,8 @@ class _SeletorCidadeDashboardState extends State<SeletorCidadeDashboard> {
                   ),
                 ),
                 const SizedBox(width: 10),
-                // Cidade expandida para ocupar o resto
+
+                // --- AUTOCOMPLETE CIDADE ---
                 Expanded(
                   child: Autocomplete<String>(
                     optionsBuilder: (TextEditingValue textValue) {
@@ -176,6 +187,7 @@ class _SeletorCidadeDashboardState extends State<SeletorCidadeDashboard> {
                         setState(() => _cidadeController.text = selection),
                     fieldViewBuilder:
                         (context, fieldController, focusNode, onSubmitted) {
+                      // Sincroniza o controller do autocomplete com o valor salvo
                       if (fieldController.text.isEmpty &&
                           _cidadeController.text.isNotEmpty) {
                         fieldController.text = _cidadeController.text;
@@ -200,17 +212,19 @@ class _SeletorCidadeDashboardState extends State<SeletorCidadeDashboard> {
               ],
             ),
             const SizedBox(height: 24),
+
+            // --- BOTÃO ATUALIZAR ---
             SizedBox(
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
-                onPressed: (_estadoController.text.isNotEmpty &&
-                        _cidadeController.text.isNotEmpty)
-                    ? _atualizarLocalizacaoLocal
-                    : null,
+                onPressed:
+                    _isLocalizacaoValida() ? _atualizarLocalizacaoLocal : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).primaryColor,
+                  backgroundColor: const Color.fromARGB(255, 0, 225, 255),
                   foregroundColor: Colors.white,
+                  disabledBackgroundColor: Colors.grey[300],
+                  disabledForegroundColor: Colors.grey[600],
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10)),
                   elevation: 0,
@@ -222,16 +236,35 @@ class _SeletorCidadeDashboardState extends State<SeletorCidadeDashboard> {
                 ),
               ),
             ),
-            // Botão opcional para fechar sem salvar
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Center(
-                child: Text("Cancelar", style: TextStyle(color: Colors.grey)),
+            const SizedBox(height: 8),
+            Center(
+              child: TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Cancelar",
+                    style: TextStyle(
+                        color: Colors.grey, fontWeight: FontWeight.w500)),
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  bool _isLocalizacaoValida() {
+    final estado = _estadoController.text;
+    final cidade = _cidadeController.text;
+
+    if (estado.isEmpty || cidade.isEmpty) return false;
+
+    // Verifica se o estado digitado existe na lista de estados
+    if (!_estados.contains(estado)) return false;
+
+    // Verifica se a cidade digitada existe na lista de municípios para aquele estado
+    bool cidadeExisteNoEstado = _municipiosBase.any((m) =>
+        m['Uf'] == estado &&
+        m['Nome'].toString().toLowerCase() == cidade.toLowerCase());
+
+    return cidadeExisteNoEstado;
   }
 }

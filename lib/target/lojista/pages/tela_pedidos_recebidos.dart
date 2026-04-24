@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../services/lojista_provider.dart';
+import '../../../services/lojista/lojista_provider.dart';
 import '../widgets/relogio_widget.dart';
 import '../widgets/card_pedido_lojista.dart';
 import '../../../models/pedido.dart';

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../services/usuario_service.dart';
-import '../../../services/usuario_provider.dart';
+import '../../../services/shared/usuario_service.dart';
+import '../../../services/shared/usuario_provider.dart';
 import '../../../models/mercado.dart';
 import '../widgets/card_mercado_pesquisa.dart';
 import '../widgets/search_bar_widget.dart';

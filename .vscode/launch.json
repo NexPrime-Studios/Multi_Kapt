@@ -1,0 +1,33 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Multi_Kapt (Web Camera Fix)",
+            "request": "launch",
+            "type": "dart",
+            "args": [
+                "--dart-define=FLUTTER_WEB_CANVAS_KIT_TYPES=none"
+            ]
+        },
+        {
+            "name": "Multi_Kapt",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "Multi_Kapt (profile mode)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "Multi_Kapt (release mode)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        }
+    ]
+}

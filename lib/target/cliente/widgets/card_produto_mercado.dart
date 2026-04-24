@@ -22,7 +22,6 @@ class CardProdutoMercado extends StatelessWidget {
     final bool emPromocao = item.emPromocao;
     final double precoAtual = emPromocao ? item.precoPromocional! : item.preco;
 
-    // Cores dinâmicas baseadas no estado de promoção
     final Color corDestaque = emPromocao ? Colors.red : Colors.transparent;
     final Color corFundoPreco =
         emPromocao ? Colors.red.withOpacity(0.08) : Colors.transparent;
@@ -40,10 +39,9 @@ class CardProdutoMercado extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          // Borda vermelha se estiver em promoção
           border: Border.all(
             color: corDestaque,
-            width: emPromocao ? 1.5 : 0.5, // Borda mais grossa na promo
+            width: emPromocao ? 1.5 : 0.5,
           ),
           boxShadow: [
             BoxShadow(
@@ -58,7 +56,7 @@ class CardProdutoMercado extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Área da Imagem
+            // Área da Imagem Atualizada
             Expanded(
               child: Stack(
                 children: [
@@ -69,15 +67,46 @@ class CardProdutoMercado extends StatelessWidget {
                       borderRadius:
                           const BorderRadius.vertical(top: Radius.circular(14)),
                     ),
-                    child: Icon(
-                      Icons.shopping_bag_outlined,
-                      color: emPromocao
-                          ? Colors.red.withOpacity(0.2)
-                          : Colors.grey[300],
-                      size: 40,
+                    child: ClipRRect(
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(14)),
+                      child: produto.fotoUrl.isNotEmpty
+                          ? Image.network(
+                              produto.fotoUrl,
+                              fit: BoxFit.cover,
+                              // Tratamento de carregamento
+                              loadingBuilder:
+                                  (context, child, loadingProgress) {
+                                if (loadingProgress == null) return child;
+                                return Center(
+                                  child: CircularProgressIndicator(
+                                    value: loadingProgress.expectedTotalBytes !=
+                                            null
+                                        ? loadingProgress
+                                                .cumulativeBytesLoaded /
+                                            loadingProgress.expectedTotalBytes!
+                                        : null,
+                                    strokeWidth: 2,
+                                  ),
+                                );
+                              },
+                              // Tratamento de erro (URL inválida ou falha de rede)
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Icon(
+                                Icons.broken_image_outlined,
+                                color: Colors.grey[300],
+                                size: 40,
+                              ),
+                            )
+                          : Icon(
+                              Icons.shopping_bag_outlined,
+                              color: emPromocao
+                                  ? Colors.red.withOpacity(0.2)
+                                  : Colors.grey[300],
+                              size: 40,
+                            ),
                     ),
                   ),
-                  // Tag de "OFF" ou "Promo" opcional
                   if (emPromocao)
                     Positioned(
                       top: 8,
@@ -107,7 +136,7 @@ class CardProdutoMercado extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(10.0),
               decoration: BoxDecoration(
-                color: corFundoPreco, // Fundo levemente colorido no texto
+                color: corFundoPreco,
                 borderRadius:
                     const BorderRadius.vertical(bottom: Radius.circular(14)),
               ),

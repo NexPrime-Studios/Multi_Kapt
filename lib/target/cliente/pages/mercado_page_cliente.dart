@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../models/mercado.dart';
 import '../../../models/produto.dart';
 import '../../../models/produto_enums.dart';
-import '../../../services/usuario_service.dart';
+import '../../../services/shared/usuario_service.dart';
 import '../widgets/card_produto_mercado.dart';
 import '../widgets/botao_carrinho_flutuante.dart';
 import '../widgets/categorias_selector.dart';

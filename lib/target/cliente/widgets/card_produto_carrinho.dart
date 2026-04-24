@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../models/carrinho_item.dart';
-import '../../../services/carrinho_service.dart';
+import '../../../services/cliente/carrinho_service.dart';
 
 class CardProdutoCarrinho extends StatelessWidget {
   final CarrinhoItem item;

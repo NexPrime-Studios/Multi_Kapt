@@ -3,7 +3,7 @@ import 'package:mercado_app/target/shared/pages/login_page.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../widgets/sidebar_lojista.dart';
-import '../../../services/lojista_provider.dart';
+import '../../../services/lojista/lojista_provider.dart';
 import 'tela_pedidos_recebidos.dart';
 import 'tela_perfil_mercado.dart';
 import 'tela_inventario_mercado.dart';

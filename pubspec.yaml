@@ -16,7 +16,6 @@ dependencies:
   wakelock_plus: ^1.5.1
   provider: ^6.1.1
   shared_preferences: ^2.2.2
-  audioplayers: ^5.2.1
   font_awesome_flutter: ^10.7.0
   flutter_image_compress: ^2.3.0
   path_provider: ^2.1.0
@@ -42,6 +41,14 @@ dependencies:
   qr_flutter: ^4.1.0
   mobile_scanner: ^7.2.0
   brasil_fields: ^1.19.0
+  camera: ^0.12.0+1
+  zxing_lib: ^1.1.4
+  http: ^1.6.0
+  html: ^0.15.6
+  webview_flutter: ^4.13.1
+  google_generative_ai: ^0.4.7
+  flutter_dotenv: ^6.0.1
+  audioplayers: ^6.6.0
 
 dev_dependencies:
   flutter_test:
@@ -53,6 +60,7 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+    - chaves.env
     - assets/icon.png
     - assets/iconsf.png
     - assets/iconw.png

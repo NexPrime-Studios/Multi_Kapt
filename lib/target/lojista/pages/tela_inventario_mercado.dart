@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../services/lojista_provider.dart';
+import '../../../services/lojista/lojista_provider.dart';
 import '../../../models/item_mercado.dart';
 import '../widgets/seletor_produtos_globais.dart';
-import '../widgets/cadastro_produto_widget.dart';
+import '../cadastro_produto/cadastro_produto_widget.dart';
 import '../widgets/card_item_inventario.dart';
 
 class TelaInventarioMercado extends StatefulWidget {
@@ -18,8 +18,6 @@ class _TelaInventarioMercadoState extends State<TelaInventarioMercado> {
 
   @override
   Widget build(BuildContext context) {
-    // Escuta o provider. O watch garante que se qualquer item mudar no banco,
-    // o Stream do Provider atualizará o mercado e esta tela reconstruirá sozinha.
     final lojistaProvider = context.watch<LojistaProvider>();
     final mercado = lojistaProvider.mercado;
 
@@ -71,9 +69,14 @@ class _TelaInventarioMercadoState extends State<TelaInventarioMercado> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: const Color.fromARGB(255, 7, 7, 212),
+        foregroundColor: const Color.fromARGB(255, 255, 255, 255),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(25),
+        ),
         onPressed: () =>
             _abrirSeletorGlobal(context, mercado.id, mercado.itens),
-        label: const Text("Adicionar Produto"),
+        label: const Text("Add Produto ao mercado"),
         icon: const Icon(Icons.add_shopping_cart),
       ),
     );
@@ -84,8 +87,8 @@ class _TelaInventarioMercadoState extends State<TelaInventarioMercado> {
       padding: const EdgeInsets.all(8.0),
       child: TextButton.icon(
         style: TextButton.styleFrom(
-          foregroundColor: Colors.white,
-          backgroundColor: Colors.blueAccent,
+          foregroundColor: const Color.fromARGB(255, 0, 0, 0),
+          backgroundColor: const Color.fromARGB(255, 253, 255, 124),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
         ),
@@ -148,8 +151,6 @@ class _TelaInventarioMercadoState extends State<TelaInventarioMercado> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
-              // Ação centralizada: o Provider remove no banco e o
-              // Stream atualiza a UI automaticamente
               await context.read<LojistaProvider>().removerItem(item);
 
               if (!mounted) return;

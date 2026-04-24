@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../models/item_mercado.dart';
 import '../../../models/produto.dart';
-import '../../../services/lojista_provider.dart';
+import '../../../services/lojista/lojista_provider.dart';
 
 class SeletorProdutosGlobais extends StatefulWidget {
   final String mercadoId;

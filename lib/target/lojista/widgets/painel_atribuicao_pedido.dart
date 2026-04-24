@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../models/pedido.dart';
-import '../../../services/lojista_provider.dart';
+import '../../../services/lojista/lojista_provider.dart';
 
 class PainelAtribuicaoPedido extends StatefulWidget {
   final Pedido pedido;

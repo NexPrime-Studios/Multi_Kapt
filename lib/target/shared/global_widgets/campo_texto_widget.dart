@@ -9,6 +9,8 @@ class CampoTextoWidget extends StatelessWidget {
   final List<TextInputFormatter>? formatters;
   final String? Function(String?)? validator;
   final int maxLines;
+  final IconData? icon;
+  final bool enabled;
 
   const CampoTextoWidget({
     super.key,
@@ -19,10 +21,14 @@ class CampoTextoWidget extends StatelessWidget {
     this.formatters,
     this.validator,
     this.maxLines = 1,
+    this.icon,
+    this.enabled = true,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: TextFormField(
@@ -31,13 +37,16 @@ class CampoTextoWidget extends StatelessWidget {
         keyboardType: type,
         inputFormatters: formatters,
         maxLines: maxLines,
+        enabled: enabled,
         decoration: InputDecoration(
           labelText: label,
-          filled: true,
-          fillColor: Colors.grey[50],
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          prefixIcon: icon != null
+              ? Icon(icon, color: theme.colorScheme.secondary)
+              : null,
         ),
-        validator: validator ?? (v) => v!.isEmpty ? "Campo obrigatório" : null,
+        validator: enabled
+            ? (validator ?? (v) => v!.isEmpty ? "Campo obrigatório" : null)
+            : null,
       ),
     );
   }

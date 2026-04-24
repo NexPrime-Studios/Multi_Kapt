@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../services/carrinho_service.dart';
+import '../../../services/cliente/carrinho_service.dart';
 import '../../../models/carrinho_item.dart';
-import '../../../services/usuario_service.dart';
-import '../../../services/usuario_provider.dart';
+import '../../../services/shared/usuario_service.dart';
+import '../../../services/shared/usuario_provider.dart';
 import '../widgets/secao_mercado_carrinho.dart';
 import '../../shared/pages/login_page.dart';
 

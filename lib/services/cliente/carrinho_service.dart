@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../models/produto.dart';
-import '../models/carrinho_item.dart';
+import '../../models/produto.dart';
+import '../../models/carrinho_item.dart';
 
 class CarrinhoService extends ChangeNotifier {
   final List<CarrinhoItem> _itens = [];

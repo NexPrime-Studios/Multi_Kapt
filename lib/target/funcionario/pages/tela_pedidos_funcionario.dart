@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../services/funcionario_provider.dart';
-import '../../../services/funcionario_service.dart';
+import '../../../services/funcionario/funcionario_provider.dart';
+import '../../../services/funcionario/funcionario_service.dart';
 import '../../../models/funcionario.dart';
 import '../widgets/card_pedido_funcionario.dart';
 import '../../../app_theme.dart';
@@ -45,7 +45,6 @@ class _PedidosFuncionarioPageState extends State<PedidosFuncionarioPage> {
       String id, String statusAtual, Map<String, dynamic> dadosPedido) async {
     final funcProv = context.read<FuncionarioProvider>();
 
-    // CORREÇÃO 1: Verificação de segurança sem usar "!"
     if (_funcionarioLogado == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -135,13 +134,15 @@ class _PedidosFuncionarioPageState extends State<PedidosFuncionarioPage> {
           final pedidosFiltrados = todosPedidos.where((p) {
             final status = p['status'];
 
-            bool verPendentes =
-                (minhaFuncao == 'coletor' || minhaFuncao == 'ambos') &&
-                    status == 'pendente';
+            // Verifica se o cargo é coletor OU se é a função mista (coletorEntregador)
+            bool verPendentes = (minhaFuncao == 'coletor' ||
+                    minhaFuncao == 'coletorEntregador') &&
+                status == 'pendente';
 
-            bool verProntos =
-                (minhaFuncao == 'entregador' || minhaFuncao == 'ambos') &&
-                    status == 'pronto';
+            // Verifica se o cargo é entregador OU se é a função mista (coletorEntregador)
+            bool verProntos = (minhaFuncao == 'entregador' ||
+                    minhaFuncao == 'coletorEntregador') &&
+                status == 'pronto';
 
             return verPendentes || verProntos;
           }).toList();

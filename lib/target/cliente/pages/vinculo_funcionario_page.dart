@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
-import '../../../services/funcionario_provider.dart';
-import '../../../services/funcionario_service.dart';
-import '../../funcionario/pages/selecao_modo_page.dart';
+import '../../../services/funcionario/funcionario_provider.dart';
+import '../../../services/funcionario/funcionario_service.dart';
+import '../../funcionario/pages/tela_selecao_modo.dart';
 import '../widgets/confirmar_vinculo_dialog.dart';
 
 class VinculoFuncionarioPage extends StatefulWidget {

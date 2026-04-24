@@ -9,6 +9,8 @@ class CampoCpfWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: TextFormField(
@@ -20,9 +22,10 @@ class CampoCpfWidget extends StatelessWidget {
         ],
         decoration: InputDecoration(
           labelText: "CPF",
-          filled: true,
-          fillColor: Colors.grey[50],
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          prefixIcon: Icon(
+            Icons.badge_outlined,
+            color: theme.colorScheme.secondary,
+          ),
         ),
         validator: (v) =>
             (v != null && CPFValidator.isValid(v)) ? null : "CPF inválido",

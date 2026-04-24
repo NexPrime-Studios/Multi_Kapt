@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../services/lojista_service.dart';
-import '../../../services/auth_service.dart';
-import '../../../services/usuario_provider.dart';
+import '../../../services/lojista/lojista_service.dart';
+import '../../../services/shared/auth_service.dart';
+import '../../../services/shared/usuario_provider.dart';
 import '../../../models/funcionario.dart';
 import '../../lojista/login/widgets/card_mercado_vinculo.dart';
 import 'tela_cadastro_mercado.dart';
 import '../pages/tela_homepage_lojista.dart';
 import '../../shared/pages/login_page.dart';
-import '../../../services/lojista_provider.dart';
+import '../../../services/lojista/lojista_provider.dart';
 
 class TelaSelecaoMercado extends StatefulWidget {
   const TelaSelecaoMercado({super.key});

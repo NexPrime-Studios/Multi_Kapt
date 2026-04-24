@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../services/funcionario_provider.dart';
+import '../../../services/funcionario/funcionario_provider.dart';
 
 class BottomBarFuncionario extends StatelessWidget {
   final int indiceAtual;

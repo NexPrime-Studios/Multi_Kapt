@@ -31,3 +31,6 @@ doc/api/
 android/key.properties
 *.jks
 *.keystore
+
+# Variáveis de ambiente
+.env

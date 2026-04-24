@@ -23,6 +23,11 @@ class _TelaMapaSelecaoState extends State<TelaMapaSelecao> {
   void initState() {
     super.initState();
     _pontoAtual = widget.posicaoInicial;
+
+    // Chama a localização atual assim que a tela abre
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _irParaMinhaLocalizacao();
+    });
   }
 
   Future<void> _buscarEndereco() async {
@@ -82,34 +87,35 @@ class _TelaMapaSelecaoState extends State<TelaMapaSelecao> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Selecione o local",
-            style: TextStyle(color: Colors.black, fontSize: 18)),
+            style: TextStyle(color: Colors.white, fontSize: 18)),
         centerTitle: true,
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.black,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
+        // Setinha de voltar branca
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Stack(
         children: [
-          // 1. O MAPA (Ocupa todo o fundo)
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
               initialCenter: _pontoAtual,
               initialZoom: 16,
               onPositionChanged: (pos, hasGesture) {
-                if (hasGesture) _pontoAtual = pos.center;
+                if (hasGesture) _pontoAtual = pos.center!;
               },
             ),
             children: [
               TileLayer(
                 urlTemplate:
-                    'https://api.maptiler.com/maps/basic/{z}/{x}/{y}.png?key=JtnonX09fMRm7ejYxIt4',
-                userAgentPackageName: 'com.example.mercado_app',
-              ),
+                    'https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=rKbkGWir3HMyYr5HxnWc',
+                userAgentPackageName: 'com.nexprimestudios.multikapt',
+                tileDisplay: const TileDisplay.fadeIn(),
+              )
             ],
           ),
 
-          // 2. BARRA DE PESQUISA (Corrigida para evitar erro de largura infinita)
+          // BARRA DE PESQUISA
           Positioned(
             top: 15,
             left: 0,
@@ -118,7 +124,6 @@ class _TelaMapaSelecaoState extends State<TelaMapaSelecao> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 15),
                 child: SizedBox(
-                  // Define um tamanho real para o telemóvel e um fixo para o PC
                   width: isWebPC ? 500 : larguraTela - 30,
                   child: Container(
                     decoration: BoxDecoration(
@@ -157,7 +162,7 @@ class _TelaMapaSelecaoState extends State<TelaMapaSelecao> {
             ),
           ),
 
-          // 3. PIN CENTRAL (Ignora toques para não atrapalhar o mapa)
+          // PIN CENTRAL
           IgnorePointer(
             child: Center(
               child: Padding(
@@ -167,7 +172,7 @@ class _TelaMapaSelecaoState extends State<TelaMapaSelecao> {
             ),
           ),
 
-          // 4. BOTÃO DE LOCALIZAÇÃO ATUAL
+          // BOTÃO DE LOCALIZAÇÃO ATUAL
           Positioned(
             bottom: 30,
             right: 16,
@@ -181,20 +186,27 @@ class _TelaMapaSelecaoState extends State<TelaMapaSelecao> {
           ),
         ],
       ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              minimumSize: const Size(double.infinity, 55),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+
+      // BARRA DE BAIXO PRETA
+      bottomNavigationBar: Container(
+        color: Colors.black, // Fundo da barra preto
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromARGB(
+                    255, 0, 225, 255), // Cor original do botão
+                minimumSize: const Size(double.infinity, 55),
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () => Navigator.pop(context, _pontoAtual),
+              child: const Text("CONFIRMAR LOCALIZAÇÃO",
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold)),
             ),
-            onPressed: () => Navigator.pop(context, _pontoAtual),
-            child: const Text("CONFIRMAR LOCALIZAÇÃO",
-                style: TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ),
       ),

@@ -5,10 +5,10 @@ import 'package:image_picker/image_picker.dart';
 import '../../../models/mercado.dart';
 import '../../../models/horario_mercado.dart';
 import '../../../models/produto_enums.dart';
-import '../../../services/lojista_provider.dart';
-import '../../../services/imagem_service.dart';
-import '../../shared/widgets/campo_texto_widget.dart';
-import '../../shared/widgets/campo_telefone_widget.dart';
+import '../../../services/lojista/lojista_provider.dart';
+import '../../../services/shared/imagem_service.dart';
+import '../../shared/global_widgets/campo_texto_widget.dart';
+import '../../shared/global_widgets/campo_telefone_widget.dart';
 import '../widgets/grade_horarios_widget.dart';
 
 class TelaPerfilMercado extends StatefulWidget {

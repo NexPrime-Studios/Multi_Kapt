@@ -13,10 +13,10 @@ import '../../../models/mercado.dart';
 import '../../../models/funcionario.dart';
 import '../../../models/horario_mercado.dart';
 import '../../../models/produto_enums.dart';
-import '../../../services/lojista_service.dart';
-import '../../../services/lojista_provider.dart';
+import '../../../services/lojista/lojista_service.dart';
+import '../../../services/lojista/lojista_provider.dart';
 import '../pages/tela_homepage_lojista.dart';
-import '../../../services/imagem_service.dart';
+import '../../../services/shared/imagem_service.dart';
 
 class CadastroMercadoPage extends StatefulWidget {
   const CadastroMercadoPage({super.key});

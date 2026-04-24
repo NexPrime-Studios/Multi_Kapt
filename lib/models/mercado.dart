@@ -81,7 +81,7 @@ class Mercado {
 
   factory Mercado.fromMap(String id, Map<String, dynamic> map) {
     return Mercado(
-      id: id,
+      id: map['id'] ?? '',
       adminUid: map['admin_uid'] ?? '',
       nome: map['nome'] ?? '',
       cnpj: map['cnpj'],

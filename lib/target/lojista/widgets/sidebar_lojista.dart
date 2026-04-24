@@ -3,8 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:mercado_app/target/shared/pages/login_page.dart';
 import 'package:provider/provider.dart';
-import '../../../services/lojista_provider.dart';
-import '../../../services/auth_service.dart';
+import '../../../services/lojista/lojista_provider.dart';
+import '../../../services/shared/auth_service.dart';
 
 class SidebarLojista extends StatelessWidget {
   final int indiceSelecionado;

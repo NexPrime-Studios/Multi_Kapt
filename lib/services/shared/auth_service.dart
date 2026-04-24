@@ -1,7 +1,7 @@
 // lib/services/auth_service.dart
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../models/usuario.dart'; // - Alterado de cliente.dart para usuario.dart
+import '../../models/usuario.dart'; // - Alterado de cliente.dart para usuario.dart
 
 class AuthService {
   final _supabase = Supabase.instance.client;

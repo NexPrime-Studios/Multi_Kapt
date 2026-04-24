@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../models/carrinho_item.dart';
 import '../../../models/mercado.dart'; // Importe para acessar o enum PagamentosAceitos
-import '../../../services/carrinho_service.dart';
-import '../../../services/usuario_service.dart';
+import '../../../services/cliente/carrinho_service.dart';
+import '../../../services/shared/usuario_service.dart';
 import 'card_produto_carrinho.dart';
 
 class SecaoMercadoCarrinho extends StatefulWidget {

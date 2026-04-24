@@ -1,14 +1,17 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart'; // Adicionado
+import 'package:image_picker/image_picker.dart';
 import '../../../../models/produto.dart';
 import '../../../../models/produto_enums.dart';
 import '../../../../models/tags_helper.dart';
-import '../../../../services/lojista_service.dart';
-import '../../../../services/imagem_service.dart'; // Adicionado
+import '../../../services/lojista/lojista_service.dart';
+import '../../../services/shared/imagem_service.dart';
 import '../widgets/campo_formulario.dart';
+import '../../shared/global_widgets/selecao_imagem_widget.dart';
+import 'menu_escolha_cadastro_widget.dart';
+import 'scanner_desktop_widget.dart';
 
-enum TelaDialog { menu, buscaEdicao, formulario }
+enum TelaDialog { menu, buscaEdicao, formulario, scanner }
 
 class DialogCadastroProduto extends StatefulWidget {
   final Produto? produtoParaEditar;
@@ -22,7 +25,7 @@ class DialogCadastroProduto extends StatefulWidget {
 class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
   final _formKey = GlobalKey<FormState>();
   final _service = LojistaService();
-  final ImagemService _imagemService = ImagemService(); // Inicializado
+  final ImagemService _imagemService = ImagemService();
 
   TelaDialog _telaAtual = TelaDialog.menu;
   String _filtroBusca = "";
@@ -35,7 +38,7 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
   final _valorMedidaController = TextEditingController(text: "1");
   final _urlImagemController = TextEditingController();
 
-  Uint8List? _novaImagemBytes; // Para armazenar a imagem selecionada localmente
+  Uint8List? _novaImagemBytes;
   CategoriaProduto _categoria = CategoriaProduto.mercearia;
   UnidadeMedida _unidade = UnidadeMedida.unidade;
   final List<String> _tagsSelecionadas = [];
@@ -61,12 +64,11 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
       _unidade = p.unidadeMedida;
       _tagsSelecionadas.clear();
       _tagsSelecionadas.addAll(p.tags);
-      _novaImagemBytes = null; // Limpa seleção local ao carregar existente
+      _novaImagemBytes = null;
       _telaAtual = TelaDialog.formulario;
     });
   }
 
-  // Lógica para selecionar imagem da galeria
   Future<void> _selecionarImagem() async {
     final picker = ImagePicker();
     final image =
@@ -74,9 +76,7 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
 
     if (image != null) {
       final bytes = await image.readAsBytes();
-      setState(() {
-        _novaImagemBytes = bytes;
-      });
+      setState(() => _novaImagemBytes = bytes);
     }
   }
 
@@ -87,11 +87,8 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
     try {
       String fotoUrl = _urlImagemController.text.trim();
       String idProduto = _produtoSelecionado?.id ??
-          DateTime.now()
-              .millisecondsSinceEpoch
-              .toString(); // ID temporário para novo produto
+          DateTime.now().millisecondsSinceEpoch.toString();
 
-      // Se houver uma nova imagem selecionada, faz o upload para o Storage
       if (_novaImagemBytes != null) {
         final resUrl = await _imagemService.uploadProdutoImage(
           bytes: _novaImagemBytes!,
@@ -107,8 +104,7 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
       }
 
       final produtoDados = Produto(
-        id: _produtoSelecionado?.id ??
-            '', // No insert o ID real será gerado pelo banco se vazio
+        id: _produtoSelecionado?.id ?? '',
         nome: nomeFinal,
         descricao: _descController.text.trim(),
         fotoUrl: fotoUrl,
@@ -153,17 +149,16 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
         child: Stack(
           children: [
             _salvando
-                ? const SizedBox(
-                    height: 300,
-                    child: Center(
-                        child: Column(
+                ? const Center(
+                    child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         CircularProgressIndicator(),
                         SizedBox(height: 10),
-                        Text("Processando Imagem...")
+                        Text("Processando..."),
                       ],
-                    )))
+                    ),
+                  )
                 : _renderizarConteudo(),
             Positioned(
               right: 8,
@@ -182,45 +177,23 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
   Widget _renderizarConteudo() {
     switch (_telaAtual) {
       case TelaDialog.menu:
-        return _buildMenu();
+        return MenuEscolhaCadastro(
+          onNovoProduto: () =>
+              setState(() => _telaAtual = TelaDialog.formulario),
+          onEditarProduto: () =>
+              setState(() => _telaAtual = TelaDialog.buscaEdicao),
+          onScanCodigo: () => setState(() => _telaAtual = TelaDialog.scanner),
+        );
       case TelaDialog.buscaEdicao:
         return _buildBuscaEdicao();
       case TelaDialog.formulario:
         return _buildFormulario();
+      case TelaDialog.scanner:
+        return _buildPainelLeitura();
     }
   }
 
-  Widget _buildMenu() {
-    return Padding(
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text("Gestão Global",
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-          const Text("Escolha uma ação abaixo",
-              style: TextStyle(color: Colors.grey)),
-          const SizedBox(height: 32),
-          _botaoOpcao(
-            icon: Icons.add_circle_outline,
-            label: "Novo Produto",
-            sublabel: "Criar um item do zero",
-            color: Colors.green,
-            onTap: () => setState(() => _telaAtual = TelaDialog.formulario),
-          ),
-          const SizedBox(height: 16),
-          _botaoOpcao(
-            icon: Icons.edit_note,
-            label: "Editar Existente",
-            sublabel: "Alterar dados na biblioteca",
-            color: Colors.blue,
-            onTap: () => setState(() => _telaAtual = TelaDialog.buscaEdicao),
-          ),
-        ],
-      ),
-    );
-  }
-
+  // --- BUSCA E EDIÇÃO ---
   Widget _buildBuscaEdicao() {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -230,16 +203,17 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
           padding: const EdgeInsets.all(16),
           child: TextField(
             decoration: InputDecoration(
-                hintText: "Nome ou marca...",
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12))),
+              hintText: "Nome ou marca...",
+              prefixIcon: const Icon(Icons.search),
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            ),
             onChanged: (val) => setState(() => _filtroBusca = val),
           ),
         ),
         const Divider(),
         SizedBox(
-          height: 350,
+          height: 400,
           child: StreamBuilder<List<Produto>>(
             stream: _service.listarProdutosGlobais(),
             builder: (context, snapshot) {
@@ -260,16 +234,17 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
                 itemCount: produtos.length,
                 itemBuilder: (context, i) => ListTile(
                   leading: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(produtos[i].fotoUrl,
-                          width: 45,
-                          height: 45,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) =>
-                              const Icon(Icons.image))),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
+                      produtos[i].fotoUrl,
+                      width: 45,
+                      height: 45,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const Icon(Icons.image),
+                    ),
+                  ),
                   title: Text(produtos[i].nome),
                   subtitle: Text(produtos[i].marca),
-                  trailing: const Icon(Icons.chevron_right),
                   onTap: () => _carregarProduto(produtos[i]),
                 ),
               );
@@ -280,6 +255,7 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
     );
   }
 
+  // --- FORMULÁRIO ---
   Widget _buildFormulario() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -292,8 +268,12 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
                 : "Editando Produto"),
             const SizedBox(height: 10),
             _secaoTitulo("Imagem do Produto", Icons.image),
-            _buildAreaUpload(),
-            const SizedBox(height: 40),
+            SelecaoImagemWidget(
+              novaImagemBytes: _novaImagemBytes,
+              urlImagemExistente: _urlImagemController.text,
+              onTap: _selecionarImagem,
+            ),
+            const SizedBox(height: 32),
             _secaoTitulo("Dados Principais", Icons.info_outline),
             CampoFormulario(
                 controller: _nomeController,
@@ -305,11 +285,6 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
                 titulo: "Marca",
                 label: "Ex: Omo",
                 icone: Icons.copyright),
-            CampoFormulario(
-                controller: _descController,
-                titulo: "Descrição",
-                label: "Detalhes do produto...",
-                icone: Icons.description_outlined),
             _buildDropdownCategoria(),
             const SizedBox(height: 16),
             if (_produtoSelecionado == null) ...[
@@ -330,7 +305,6 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
             _secaoTitulo("Tags de Busca", Icons.label_outline),
             _buildTagChips(),
             const Divider(height: 40),
-            _secaoTitulo("Rastreabilidade", Icons.qr_code),
             CampoFormulario(
                 controller: _barrasController,
                 titulo: "Código de Barras",
@@ -342,11 +316,12 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
               width: double.infinity,
               height: 55,
               child: ElevatedButton.icon(
-                  onPressed: _salvar,
-                  icon: const Icon(Icons.check_circle),
-                  label: Text(_produtoSelecionado == null
-                      ? "CADASTRAR PRODUTO"
-                      : "SALVAR ALTERAÇÕES")),
+                onPressed: _salvar,
+                icon: const Icon(Icons.check_circle),
+                label: Text(_produtoSelecionado == null
+                    ? "CADASTRAR PRODUTO"
+                    : "SALVAR ALTERAÇÕES"),
+              ),
             ),
           ],
         ),
@@ -354,88 +329,24 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
     );
   }
 
-  Widget _buildAreaUpload() {
-    return GestureDetector(
-      onTap: _selecionarImagem,
-      child: Container(
-        width: double.infinity,
-        height: 160,
-        decoration: BoxDecoration(
-          color: Colors.grey[100],
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(
-              color: Colors.blue.withOpacity(0.3),
-              width: 2,
-              style: BorderStyle.solid),
-        ),
-        child: _novaImagemBytes != null
-            ? ClipRRect(
-                borderRadius: BorderRadius.circular(13),
-                child: Image.memory(_novaImagemBytes!, fit: BoxFit.cover))
-            : (_urlImagemController.text.isNotEmpty
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(13),
-                    child: Image.network(_urlImagemController.text,
-                        fit: BoxFit.cover,
-                        errorBuilder: (c, e, s) =>
-                            const Icon(Icons.broken_image)))
-                : Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(Icons.cloud_upload_outlined,
-                          size: 40, color: Colors.blue),
-                      Text("Clique para selecionar foto",
-                          style: TextStyle(
-                              color: Colors.blue, fontWeight: FontWeight.bold))
-                    ],
-                  )),
-      ),
-    );
-  }
-
-  // --- MÉTODOS DE SUPORTE MANTIDOS ---
+  // --- HELPERS ---
   Widget _buildHeaderVoltar(String titulo) {
     return Row(children: [
       IconButton(
-          onPressed: () => setState(() => _telaAtual = TelaDialog.menu),
-          icon: const Icon(Icons.arrow_back_ios, size: 20)),
+        onPressed: () {
+          if (_telaAtual == TelaDialog.formulario &&
+              _produtoSelecionado != null) {
+            Navigator.pop(
+                context); // Se veio direto para editar, fecha o dialog
+          } else {
+            setState(() => _telaAtual = TelaDialog.menu);
+          }
+        },
+        icon: const Icon(Icons.arrow_back_ios, size: 20),
+      ),
       Text(titulo,
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
     ]);
-  }
-
-  Widget _botaoOpcao(
-      {required IconData icon,
-      required String label,
-      required String sublabel,
-      required Color color,
-      required VoidCallback onTap}) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(15),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-            border: Border.all(color: color.withOpacity(0.2)),
-            borderRadius: BorderRadius.circular(15),
-            color: color.withOpacity(0.05)),
-        child: Row(children: [
-          CircleAvatar(
-              backgroundColor: color.withOpacity(0.1),
-              child: Icon(icon, color: color)),
-          const SizedBox(width: 16),
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(label,
-                style: TextStyle(
-                    fontSize: 16, fontWeight: FontWeight.bold, color: color)),
-            Text(sublabel,
-                style: TextStyle(fontSize: 12, color: color.withOpacity(0.8))),
-          ]),
-          const Spacer(),
-          const Icon(Icons.chevron_right, color: Colors.blueGrey)
-        ]),
-      ),
-    );
   }
 
   Widget _secaoTitulo(String titulo, IconData icone) {
@@ -446,7 +357,7 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
         const SizedBox(width: 8),
         Text(titulo,
             style: const TextStyle(
-                fontWeight: FontWeight.bold, color: Colors.blueGrey))
+                fontWeight: FontWeight.bold, color: Colors.blueGrey)),
       ]),
     );
   }
@@ -483,12 +394,58 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
       children: sugestoes.map((tag) {
         final sel = _tagsSelecionadas.contains(tag);
         return FilterChip(
-            label: Text(tag),
-            selected: sel,
-            onSelected: (v) => setState(() => v
-                ? _tagsSelecionadas.add(tag)
-                : _tagsSelecionadas.remove(tag)));
+          label: Text(tag),
+          selected: sel,
+          onSelected: (v) => setState(() =>
+              v ? _tagsSelecionadas.add(tag) : _tagsSelecionadas.remove(tag)),
+        );
       }).toList(),
     );
+  }
+
+  Widget _buildPainelLeitura() {
+    return Column(
+      children: [
+        _buildHeaderVoltar("Scanner via Webcam"),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: ScannerDesktopWidget(
+              onCodeFound: (codigo) => _processarLeituraEAN(codigo),
+            ),
+          ),
+        ),
+        const Padding(
+          padding: EdgeInsets.only(bottom: 20),
+          child: Text("Aponte o código de barras para a webcam"),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _processarLeituraEAN(String codigo) async {
+    setState(() => _salvando = true); //
+
+    try {
+      final produtoExistente =
+          await _service.buscarProdutoPorCodigoBarras(codigo);
+
+      if (produtoExistente != null) {
+        _carregarProduto(produtoExistente); //
+      } else {
+        setState(() {
+          _produtoSelecionado = null;
+          _nomeController.clear();
+          _marcaController.clear();
+          _descController.clear();
+          _barrasController.text = codigo;
+          _telaAtual = TelaDialog.formulario;
+        });
+      }
+    } catch (e) {
+      debugPrint("Erro ao verificar produto: $e");
+    } finally {
+      if (mounted) setState(() => _salvando = false);
+    }
   }
 }

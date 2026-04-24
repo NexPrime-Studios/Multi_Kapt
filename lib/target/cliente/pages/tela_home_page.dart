@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../models/mercado.dart';
-import '../../../services/usuario_service.dart';
-import '../../../services/usuario_provider.dart';
+import '../../../services/shared/usuario_service.dart';
+import '../../../services/shared/usuario_provider.dart';
 import '../widgets/card_mercado_pesquisa.dart';
 import '../widgets/search_bar_widget.dart';
 import '../widgets/seletor_localizacao_widget.dart';
@@ -31,12 +31,7 @@ class _HomePageClienteState extends State<HomePageCliente> {
 
   void _verificarLocalizacaoObrigatoria() {
     final clienteProv = context.read<UsuarioProvider>();
-    final cliente = clienteProv.usuario;
-
-    // Dispara o popup se:
-    // 1. O usuário é anônimo (cliente == null)
-    // 2. O usuário está logado mas não definiu a cidade no perfil
-    if (cliente == null || cliente.cidade.isEmpty) {
+    if (!clienteProv.temLocalizacao) {
       _mostrarPopupSelecaoCidade();
     }
   }
@@ -70,7 +65,7 @@ class _HomePageClienteState extends State<HomePageCliente> {
       builder: (context) => Dialog(
         backgroundColor: Colors.transparent,
         insetPadding: const EdgeInsets.symmetric(horizontal: 20),
-        child: const SeletorCidadeDashboard(),
+        child: const SeletorLocalizacaoWidget(),
       ),
     );
   }
@@ -79,10 +74,10 @@ class _HomePageClienteState extends State<HomePageCliente> {
   Widget build(BuildContext context) {
     final ColorScheme cores = Theme.of(context).colorScheme;
     final cliente = context.watch<UsuarioProvider>().usuario;
+    final localizacaoProv = context.watch<UsuarioProvider>();
 
-    // Removido o padrão "Edéia". Se não houver cidade, exibe um aviso ou texto vazio.
-    final String cidade = cliente?.cidade ?? "";
-    final String estado = cliente?.estado ?? "";
+    final String cidade = cliente?.cidade ?? localizacaoProv.cidade;
+    final String estado = cliente?.estado ?? localizacaoProv.estado;
     final bool temLocalizacao = cidade.isNotEmpty;
 
     final double alturaDegrade = MediaQuery.of(context).size.height * 0.45;

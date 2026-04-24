@@ -14,6 +14,8 @@ class CampoTelefoneWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: TextFormField(
@@ -25,9 +27,10 @@ class CampoTelefoneWidget extends StatelessWidget {
         ],
         decoration: InputDecoration(
           labelText: label,
-          filled: true,
-          fillColor: Colors.grey[50],
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          prefixIcon: Icon(
+            Icons.phone_outlined,
+            color: theme.colorScheme.secondary,
+          ),
         ),
         validator: (v) => (v == null || v.isEmpty) ? "Campo obrigatório" : null,
       ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../models/funcionario.dart';
-import '../../../services/lojista_provider.dart';
+import '../../../services/lojista/lojista_provider.dart';
 import '../widgets/cadastro_funcionario_widget.dart';
 
 class TelaEquipeLojista extends StatefulWidget {

@@ -1,13 +1,17 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:mercado_app/models/item_mercado.dart';
+import 'package:mercado_app/services/shared/mercado_shared_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'funcionario_service.dart';
-import '../models/funcionario.dart'; //
+import '../../models/funcionario.dart';
 
 class FuncionarioProvider extends ChangeNotifier {
   final FuncionarioService _service = FuncionarioService();
+  MercadoSharedProvider mercadoSharedProvider;
   StreamSubscription? _pedidosSubscription;
 
+  Funcionario? _funcionario;
   bool _isFuncionario;
   String? _mercadoId;
   String? _funcionarioId;
@@ -21,6 +25,7 @@ class FuncionarioProvider extends ChangeNotifier {
 
   FuncionarioProvider({
     required bool isFuncionario,
+    required this.mercadoSharedProvider,
     String? mercadoId,
     String? funcionarioId,
   })  : _isFuncionario = isFuncionario,
@@ -32,6 +37,7 @@ class FuncionarioProvider extends ChangeNotifier {
   }
 
   // Getters
+  Funcionario? get funcionario => _funcionario;
   bool get isFuncionario => _isFuncionario;
   String? get mercadoId => _mercadoId;
   String? get funcionarioId => _funcionarioId;
@@ -46,17 +52,38 @@ class FuncionarioProvider extends ChangeNotifier {
     try {
       if (_funcionarioId == null) return;
 
-      final Funcionario? f =
-          await _service.buscarDadosFuncionario(_funcionarioId!);
+      _funcionario = await _service.buscarDadosFuncionario(_funcionarioId!);
 
-      if (f != null) {
-        _codigoFuncionario = f.codigoSenha;
+      if (_funcionario != null) {
+        _codigoFuncionario = _funcionario?.codigoSenha;
+
+        if (_mercadoId != null) {
+          await mercadoSharedProvider.inicializarComMercado(_mercadoId!);
+        }
+
         iniciarMonitoramentoPedidos();
         notifyListeners();
       }
     } catch (e) {
       debugPrint("Erro ao inicializar dados do funcionário: $e");
     }
+  }
+
+  Future<void> vincularFuncionario(
+      String mercadoId, String funcionarioId) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    await prefs.setBool('is_funcionario', true);
+    await prefs.setString('mercado_vinculado_id', mercadoId);
+    await prefs.setString('funcionario_id', funcionarioId);
+
+    _isFuncionario = true;
+    _mercadoId = mercadoId;
+    _funcionarioId = funcionarioId;
+    _mostrarSelecao = false;
+
+    await mercadoSharedProvider.inicializarComMercado(mercadoId);
+    await _inicializarDadosFuncionario();
   }
 
   /// Inicia a escuta em tempo real do Supabase
@@ -139,24 +166,6 @@ class FuncionarioProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Vínculo simplificado: Guarda apenas o ID. O código é baixado logo a seguir.
-  Future<void> vincularFuncionario(
-      String mercadoId, String funcionarioId) async {
-    final prefs = await SharedPreferences.getInstance();
-
-    await prefs.setBool('is_funcionario', true);
-    await prefs.setString('mercado_vinculado_id', mercadoId);
-    await prefs.setString('funcionario_id', funcionarioId);
-
-    _isFuncionario = true;
-    _mercadoId = mercadoId;
-    _funcionarioId = funcionarioId;
-    _mostrarSelecao = false;
-
-    // Aciona o download dos dados para obter o Código Senha
-    await _inicializarDadosFuncionario();
-  }
-
   Future<void> desvincular() async {
     final prefs = await SharedPreferences.getInstance();
     pararMonitoramento();
@@ -174,6 +183,13 @@ class FuncionarioProvider extends ChangeNotifier {
     _pedidoEmColeta = null;
     _pedidoEmEntrega = null;
 
+    notifyListeners();
+  }
+
+  Future<void> adicionarItemAoMercado(ItemMercado novoItem) async {
+    if (mercadoId == null) return;
+
+    await _service.adicionarItemAoInventario(mercadoId.toString(), novoItem);
     notifyListeners();
   }
 

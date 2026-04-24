@@ -1,10 +1,10 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
-import '../models/mercado.dart';
-import '../models/produto.dart';
-import '../models/item_mercado.dart';
-import '../models/pedido.dart';
-import '../models/funcionario.dart';
+import '../../models/mercado.dart';
+import '../../models/produto.dart';
+import '../../models/item_mercado.dart';
+import '../../models/pedido.dart';
+import '../../models/funcionario.dart';
 
 class LojistaService {
   final _supabase = Supabase.instance.client;
@@ -265,5 +265,24 @@ class LojistaService {
 
   Future<void> alternarStatusFuncionario(String id, bool ativo) async {
     await _supabase.from('funcionarios').update({'ativo': ativo}).eq('id', id);
+  }
+
+  Future<Produto?> buscarProdutoPorCodigoBarras(String codigo) async {
+    try {
+      final response = await _supabase
+          .from('produtos')
+          .select()
+          .eq('codigo_barras', codigo)
+          .maybeSingle();
+
+      if (response != null) {
+        return Produto.fromMap(response['id'], response);
+      }
+
+      return null;
+    } catch (e) {
+      debugPrint("Erro ao buscar produto por EAN: $e");
+      return null;
+    }
   }
 }

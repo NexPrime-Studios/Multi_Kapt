@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../models/produto.dart';
 import '../../../models/item_mercado.dart';
 import '../../../models/mercado.dart';
-import '../../../services/carrinho_service.dart';
+import '../../../services/cliente/carrinho_service.dart';
 import 'seletor_quantidade_widget.dart';
 import '../widgets/mercado_widgets/dialog_observacao_produto.dart';
 
@@ -30,6 +30,7 @@ class _DetalhesProdutoWidgetState extends State<DetalhesProdutoWidget> {
   bool _aceitaSubstituicao = false;
   final _controller = TextEditingController();
   final _obsController = TextEditingController();
+  bool _descricaoExpandida = false;
 
   @override
   void initState() {
@@ -85,14 +86,40 @@ class _DetalhesProdutoWidgetState extends State<DetalhesProdutoWidget> {
 
               Center(
                 child: Container(
-                  height: 120,
-                  width: 120,
+                  height: 180,
+                  width: double.infinity,
                   decoration: BoxDecoration(
-                    color: Colors.grey[100],
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Icon(Icons.image_outlined,
-                      size: 48, color: Colors.grey[400]),
+                  // Removida a verificação de nulo e o operador '!'
+                  child: widget.produto.fotoUrl.isNotEmpty
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Image.network(
+                            widget.produto.fotoUrl,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) => Icon(
+                              Icons.broken_image_outlined,
+                              size: 48,
+                              color: Colors.grey[400],
+                            ),
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Center(
+                                child: CircularProgressIndicator(
+                                  value: loadingProgress.expectedTotalBytes !=
+                                          null
+                                      ? loadingProgress.cumulativeBytesLoaded /
+                                          loadingProgress.expectedTotalBytes!
+                                      : null,
+                                ),
+                              );
+                            },
+                          ),
+                        )
+                      : Icon(Icons.image_outlined,
+                          size: 48, color: Colors.grey[400]),
                 ),
               ),
               const SizedBox(height: 16),
@@ -233,9 +260,39 @@ class _DetalhesProdutoWidgetState extends State<DetalhesProdutoWidget> {
                   fontSize: 12,
                   fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
-          if (widget.produto.descricao.isNotEmpty)
-            Text(widget.produto.descricao,
-                style: const TextStyle(fontSize: 13, color: Colors.black54)),
+          // --- BLOCO DE DESCRIÇÃO COM "LER MAIS" ---
+          if (widget.produto.descricao.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: () =>
+                  setState(() => _descricaoExpandida = !_descricaoExpandida),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.produto.descricao,
+                    // Se não estiver expandido, limita a 3 linhas
+                    maxLines: _descricaoExpandida ? null : 3,
+                    overflow: _descricaoExpandida
+                        ? TextOverflow.visible
+                        : TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 13, color: Colors.black54),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      _descricaoExpandida ? "Ver menos" : "Ler mais...",
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: cores.secondary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           Text("Cód: ${widget.produto.codigoBarras}",
               style: TextStyle(
                   fontSize: 11,
@@ -353,7 +410,7 @@ class _DetalhesProdutoWidgetState extends State<DetalhesProdutoWidget> {
             height: 50,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.deepOrange,
+                backgroundColor: cores.secondary,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),

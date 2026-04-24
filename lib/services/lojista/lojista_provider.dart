@@ -1,15 +1,19 @@
-// lib/services/lojista_provider.dart
-
-import 'dart:async'; // Adicionado para gerenciar StreamSubscription
+import 'dart:async';
 import 'package:flutter/material.dart';
-import '../models/mercado.dart';
-import '../models/pedido.dart';
-import '../models/funcionario.dart';
-import '../models/item_mercado.dart';
+import 'package:mercado_app/services/shared/mercado_shared_provider.dart';
+import '../../models/mercado.dart';
+import '../../models/pedido.dart';
+import '../../models/funcionario.dart';
+import '../../models/item_mercado.dart';
 import 'lojista_service.dart';
 
 class LojistaProvider extends ChangeNotifier {
   final LojistaService _service = LojistaService();
+  MercadoSharedProvider mercadoSharedProvider;
+
+  LojistaProvider({
+    required this.mercadoSharedProvider,
+  });
 
   String? _mercadoIdAtivo;
   CargoAcesso? _cargoAtual;
@@ -49,11 +53,14 @@ class LojistaProvider extends ChangeNotifier {
     notifyListeners();
 
     // Ouvinte para dados do Mercado (Perfil)
-    _subMercado =
-        _service.streamMercadoPorAdmin(adminUid).listen((mercadoEncontrado) {
+    _subMercado = _service
+        .streamMercadoPorAdmin(adminUid)
+        .listen((mercadoEncontrado) async {
       _mercado = mercadoEncontrado;
 
       if (mercadoEncontrado != null) {
+        await mercadoSharedProvider.inicializarComMercado(mercadoEncontrado.id);
+
         _ouvirPedidos(mercadoEncontrado.id);
         _ouvirEquipe(mercadoEncontrado.id);
         _processarPromocoes();

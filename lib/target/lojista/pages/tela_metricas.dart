@@ -2,8 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../services/lojista_provider.dart';
-import '../../../services/metricas_service.dart';
+import '../../../services/lojista/lojista_provider.dart';
+import '../../../services/lojista/metricas_service.dart';
 import '../widgets/metricas/valor_total_widget.dart';
 import '../widgets/metricas/quantidade_pedidos_widget.dart';
 import '../widgets/metricas/ticket_medio_widget.dart';

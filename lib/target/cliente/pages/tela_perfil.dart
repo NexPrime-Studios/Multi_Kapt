@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
+
+// Modelos e Providers
 import '../../../models/usuario.dart';
-import '../../../services/usuario_provider.dart';
-import '../../../services/funcionario_provider.dart';
-import '../../funcionario/pages/selecao_modo_page.dart';
+import '../../../services/shared/usuario_provider.dart';
+import '../../../services/funcionario/funcionario_provider.dart';
+
+// Navegação
+import '../../funcionario/pages/tela_selecao_modo.dart';
 import '../../shared/pages/mapa_selecao_page.dart';
 import '../../shared/pages/login_page.dart';
 import 'vinculo_funcionario_page.dart';
@@ -24,11 +28,18 @@ class _PerfilPageClienteState extends State<PerfilPageCliente> {
   bool _editando = false;
   bool _salvando = false;
 
+  // Controllers Dados Pessoais
   final _nomeController = TextEditingController();
   final _telefoneController = TextEditingController();
-  final _enderecoController = TextEditingController();
+
+  // NOVOS: Controllers baseados na classe Endereco
+  final _cepController = TextEditingController();
+  final _ruaController = TextEditingController();
+  final _numeroController = TextEditingController();
+  final _bairroController = TextEditingController();
   final _cidadeController = TextEditingController();
   final _estadoController = TextEditingController();
+  final _complementoController = TextEditingController();
 
   double? _lat;
   double? _lng;
@@ -36,7 +47,6 @@ class _PerfilPageClienteState extends State<PerfilPageCliente> {
   @override
   void initState() {
     super.initState();
-    // Dispara o carregamento inicial se o Provider estiver vazio e houver um usuário logado
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final p = context.read<UsuarioProvider>();
       if (!p.temPerfil && _supabase.auth.currentUser != null) {
@@ -49,56 +59,88 @@ class _PerfilPageClienteState extends State<PerfilPageCliente> {
   void dispose() {
     _nomeController.dispose();
     _telefoneController.dispose();
-    _enderecoController.dispose();
+    _cepController.dispose();
+    _ruaController.dispose();
+    _numeroController.dispose();
+    _bairroController.dispose();
     _cidadeController.dispose();
     _estadoController.dispose();
+    _complementoController.dispose();
     super.dispose();
   }
 
-  void _sincronizarControllers(Usuario cliente) {
-    _nomeController.text = cliente.nome;
-    _telefoneController.text = cliente.telefone;
-    _enderecoController.text = cliente.endereco;
-    _cidadeController.text = cliente.cidade;
-    _estadoController.text = cliente.estado;
-    _lat = cliente.latitude;
-    _lng = cliente.longitude;
+  /// Sincroniza os controllers com os dados vindos do Provider (Objeto Usuario + Endereco)
+  void _sincronizarControllers(Usuario usuario) {
+    _nomeController.text = usuario.nome;
+    _telefoneController.text = usuario.telefone;
+
+    // Mapeando sub-classe Endereco para os controllers
+    _cepController.text = usuario.endereco.cep;
+    _ruaController.text = usuario.endereco.rua;
+    _numeroController.text = usuario.endereco.numero;
+    _bairroController.text = usuario.endereco.bairro;
+    _cidadeController.text = usuario.endereco.cidade;
+    _estadoController.text = usuario.endereco.estado;
+    _complementoController.text = usuario.endereco.complemento;
+
+    _lat = usuario.latitude;
+    _lng = usuario.longitude;
   }
 
   Future<void> _salvarAlteracoes() async {
     if (!_formKey.currentState!.validate()) return;
+
     if (_lat == null || _lng == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text("⚠️ Marque o PIN no mapa!"),
-            backgroundColor: Colors.orange),
-      );
+      _mostrarMensagem("⚠️ Marque a localização no mapa!", Colors.orange);
       return;
     }
 
     setState(() => _salvando = true);
     try {
-      final user = _supabase.auth.currentUser;
-      final clienteAtu = Usuario(
-        uid: user!.id,
-        email: user.email!,
+      final userAuth = _supabase.auth.currentUser;
+
+      // 1. Criar o objeto de Endereço
+      final novoEndereco = Endereco(
+        cep: _cepController.text.trim(),
+        rua: _ruaController.text.trim(),
+        numero: _numeroController.text.trim(),
+        bairro: _bairroController.text.trim(),
+        cidade: _cidadeController.text.trim(),
+        estado: _estadoController.text.trim(),
+        complemento: _complementoController.text.trim(),
+      );
+
+      // 2. Criar o objeto Usuario com a nova lógica
+      final usuarioAtualizado = Usuario(
+        uid: userAuth!.id,
+        email: userAuth.email!,
         nome: _nomeController.text.trim(),
         telefone: _telefoneController.text.trim(),
-        endereco: _enderecoController.text.trim(),
-        cidade: _cidadeController.text,
-        estado: _estadoController.text,
+        endereco: novoEndereco, // Objeto complexo
+        cidade: _cidadeController.text
+            .trim(), // Mantido por redundância se sua classe pede
+        estado: _estadoController.text.trim(),
         latitude: _lat,
         longitude: _lng,
       );
 
-      await context.read<UsuarioProvider>().salvarEAtualizarPerfil(clienteAtu);
+      await context
+          .read<UsuarioProvider>()
+          .salvarEAtualizarPerfil(usuarioAtualizado);
+
+      _mostrarMensagem("Perfil atualizado com sucesso!", Colors.green);
       setState(() => _editando = false);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Erro: $e"), backgroundColor: Colors.red));
+      _mostrarMensagem("Erro ao salvar: $e", Colors.red);
     } finally {
       if (mounted) setState(() => _salvando = false);
     }
+  }
+
+  void _mostrarMensagem(String msg, Color cor) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: cor),
+    );
   }
 
   @override
@@ -106,25 +148,27 @@ class _PerfilPageClienteState extends State<PerfilPageCliente> {
     final user = _supabase.auth.currentUser;
     final cores = Theme.of(context).colorScheme;
     final clienteProvider = context.watch<UsuarioProvider>();
-    final cliente = clienteProvider.usuario;
+    final usuario = clienteProvider.usuario;
     final funcionarioProvider = context.watch<FuncionarioProvider>();
 
     if (user == null) return _buildTelaNaoLogado(cores);
 
-    if (!_editando && cliente != null) {
-      _sincronizarControllers(cliente);
+    // Sincroniza campos se não estiver em modo de edição
+    if (!_editando && usuario != null) {
+      _sincronizarControllers(usuario);
     }
 
-    if (cliente == null) {
+    if (usuario == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text("Dados da Conta",
+        title: const Text("Meu Perfil",
             style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
         backgroundColor: cores.secondary,
+        elevation: 0,
         actions: [
           IconButton(
             onPressed: () => setState(() => _editando = !_editando),
@@ -136,19 +180,54 @@ class _PerfilPageClienteState extends State<PerfilPageCliente> {
       body: Stack(
         children: [
           SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(20),
             child: Form(
               key: _formKey,
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildCampo(cores, "NOME", _nomeController, Icons.person),
-                  const SizedBox(height: 16),
+                  _buildTituloSecao("DADOS PESSOAIS"),
                   _buildCampo(
-                      cores, "TELEFONE", _telefoneController, Icons.phone,
+                      cores, "Nome Completo", _nomeController, Icons.person),
+                  const SizedBox(height: 12),
+                  _buildCampo(
+                      cores, "WhatsApp", _telefoneController, Icons.phone,
                       isNumero: true),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
+                  _buildTituloSecao("ENDEREÇO"),
+                  Row(
+                    children: [
+                      Expanded(
+                          flex: 2,
+                          child: _buildCampo(
+                              cores, "CEP", _cepController, Icons.location_on)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                          flex: 1,
+                          child: _buildCampo(
+                              cores, "UF", _estadoController, null)),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
                   _buildCampo(
-                      cores, "ENDEREÇO", _enderecoController, Icons.home),
+                      cores, "Cidade", _cidadeController, Icons.location_city),
+                  const SizedBox(height: 12),
+                  _buildCampo(cores, "Rua", _ruaController, Icons.map),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                          child: _buildCampo(
+                              cores, "Número", _numeroController, null)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                          child: _buildCampo(
+                              cores, "Bairro", _bairroController, null)),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  _buildCampo(cores, "Complemento", _complementoController,
+                      Icons.info_outline),
                   const SizedBox(height: 24),
                   _buildInfoMapa(cores),
                   const SizedBox(height: 32),
@@ -157,9 +236,13 @@ class _PerfilPageClienteState extends State<PerfilPageCliente> {
                       onPressed: _salvando ? null : _salvarAlteracoes,
                       style: ElevatedButton.styleFrom(
                           backgroundColor: cores.secondary,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
                           minimumSize: const Size(double.infinity, 55)),
                       child: const Text("SALVAR ALTERAÇÕES",
-                          style: TextStyle(color: Colors.white)),
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold)),
                     )
                   else
                     _buildBotoesAcao(user, funcionarioProvider, cores),
@@ -176,75 +259,36 @@ class _PerfilPageClienteState extends State<PerfilPageCliente> {
     );
   }
 
-  Widget _buildBotoesAcao(
-      User user, FuncionarioProvider fp, ColorScheme cores) {
-    return Column(
-      children: [
-        OutlinedButton.icon(
-          onPressed: () {
-            // Trava de segurança: só permite prosseguir se houver um usuário autenticado no Supabase
-            if (_supabase.auth.currentUser == null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content: Text(
-                        "Você precisa estar logado para realizar esta ação.")),
-              );
-              return;
-            }
-
-            if (fp.isFuncionario) {
-              fp.irParaSelecao();
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) => const SelecaoModoPage()),
-                (route) => false,
-              );
-            } else {
-              Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => const VinculoFuncionarioPage()));
-            }
-          },
-          icon: Icon(fp.isFuncionario ? Icons.swap_horiz : Icons.badge,
-              color: cores.secondary),
-          label: Text(
-              fp.isFuncionario
-                  ? "MODO FUNCIONÁRIO"
-                  : "ADICIONAR CONTA FUNCIONÁRIO",
-              style: TextStyle(
-                  color: cores.secondary, fontWeight: FontWeight.bold)),
-          style: OutlinedButton.styleFrom(
-              minimumSize: const Size(double.infinity, 55),
-              side: BorderSide(color: cores.secondary)),
-        ),
-        const SizedBox(height: 16),
-        TextButton.icon(
-          onPressed: () async {
-            context.read<UsuarioProvider>().limparUsuario();
-            await _supabase.auth.signOut();
-          },
-          icon: const Icon(Icons.logout, color: Colors.grey),
-          label:
-              const Text("Sair da conta", style: TextStyle(color: Colors.grey)),
-        ),
-      ],
+  Widget _buildTituloSecao(String titulo) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12, left: 4),
+      child: Text(titulo,
+          style: const TextStyle(
+              fontSize: 13, fontWeight: FontWeight.bold, color: Colors.grey)),
     );
   }
 
-  // Métodos auxiliares de UI (_buildCampo, _buildInfoMapa, _buildTelaNaoLogado) seguem o mesmo padrão visual anterior.
   Widget _buildCampo(ColorScheme cores, String label,
-      TextEditingController controller, IconData icone,
+      TextEditingController controller, IconData? icone,
       {bool isNumero = false}) {
     return TextFormField(
       controller: controller,
       enabled: _editando,
       keyboardType: isNumero ? TextInputType.phone : TextInputType.text,
+      style: TextStyle(color: _editando ? Colors.black87 : Colors.black54),
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icone, color: _editando ? cores.primary : Colors.grey),
+        prefixIcon: icone != null
+            ? Icon(icone,
+                size: 20, color: _editando ? cores.secondary : Colors.grey)
+            : null,
         filled: true,
-        fillColor: _editando ? Colors.white : Colors.grey[50],
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        fillColor: _editando ? Colors.white : Colors.grey[200],
+        border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
     );
   }
@@ -271,38 +315,105 @@ class _PerfilPageClienteState extends State<PerfilPageCliente> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey[300]!),
+            color: _editando ? Colors.white : Colors.grey[200],
+            border: Border.all(
+                color: selecionado && _editando
+                    ? cores.secondary
+                    : Colors.transparent),
             borderRadius: BorderRadius.circular(12)),
         child: Row(
           children: [
-            Icon(Icons.location_on,
-                color: selecionado ? cores.secondary : Colors.grey),
+            Icon(Icons.map_outlined,
+                color: selecionado ? Colors.green : Colors.grey),
             const SizedBox(width: 12),
-            Text(selecionado
-                ? "Localização Fixada"
-                : "Toque para marcar no mapa"),
+            Expanded(
+              child: Text(
+                selecionado
+                    ? "Localização Geográfica Fixada ✓"
+                    : "Toque para marcar no mapa *",
+                style: TextStyle(
+                    color: selecionado ? Colors.green[700] : Colors.black54,
+                    fontWeight: FontWeight.w500),
+              ),
+            ),
+            if (_editando) const Icon(Icons.chevron_right, color: Colors.grey),
           ],
         ),
       ),
     );
   }
 
+  Widget _buildBotoesAcao(
+      User user, FuncionarioProvider fp, ColorScheme cores) {
+    return Column(
+      children: [
+        OutlinedButton.icon(
+          onPressed: () {
+            if (fp.isFuncionario) {
+              fp.irParaSelecao();
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const SelecaoModoPage()),
+                (route) => false,
+              );
+            } else {
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const VinculoFuncionarioPage()));
+            }
+          },
+          icon: Icon(fp.isFuncionario ? Icons.swap_horiz : Icons.badge,
+              color: cores.secondary),
+          label: Text(
+              fp.isFuncionario
+                  ? "MODO FUNCIONÁRIO"
+                  : "ADICIONAR CONTA FUNCIONÁRIO",
+              style: TextStyle(
+                  color: cores.secondary, fontWeight: FontWeight.bold)),
+          style: OutlinedButton.styleFrom(
+              minimumSize: const Size(double.infinity, 55),
+              side: BorderSide(color: cores.secondary),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12))),
+        ),
+        const SizedBox(height: 16),
+        TextButton.icon(
+          onPressed: () async {
+            context.read<UsuarioProvider>().limparUsuario();
+            await context.read<FuncionarioProvider>().desvincular();
+            await _supabase.auth.signOut();
+          },
+          icon: const Icon(Icons.logout, color: Colors.redAccent),
+          label: const Text("Sair da conta",
+              style: TextStyle(color: Colors.redAccent)),
+        ),
+      ],
+    );
+  }
+
   Widget _buildTelaNaoLogado(ColorScheme cores) {
     return Scaffold(
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.lock_outline, size: 64, color: Colors.grey),
-            const SizedBox(height: 16),
-            const Text("Acesse sua conta para ver o perfil",
-                style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 24),
-            ElevatedButton(
+        child: Padding(
+          padding: const EdgeInsets.all(32.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.account_circle_outlined,
+                  size: 80, color: Colors.grey[400]),
+              const SizedBox(height: 16),
+              const Text("Ops! Você não está logado.",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text("Acesse sua conta para gerenciar seus dados.",
+                  textAlign: TextAlign.center),
+              const SizedBox(height: 24),
+              ElevatedButton(
                 onPressed: () => Navigator.push(context,
                     MaterialPageRoute(builder: (_) => const LoginPage())),
-                child: const Text("FAZER LOGIN")),
-          ],
+                child: const Text("ENTRAR AGORA"),
+              ),
+            ],
+          ),
         ),
       ),
     );

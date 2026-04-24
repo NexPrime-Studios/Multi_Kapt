@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:mercado_app/models/produto_enums.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../models/mercado.dart';
-import '../models/produto.dart';
-import '../models/pedido.dart';
-import '../models/carrinho_item.dart';
-import '../models/usuario.dart';
-import '../models/item_pedido.dart';
+import '../../models/mercado.dart';
+import '../../models/produto.dart';
+import '../../models/pedido.dart';
+import '../../models/carrinho_item.dart';
+import '../../models/usuario.dart';
+import '../../models/item_pedido.dart';
 
 class UsuarioService {
   final _supabase = Supabase.instance.client;
@@ -99,6 +99,11 @@ class UsuarioService {
   }) async {
     final now = DateTime.now();
 
+    final endereco = cliente.endereco;
+    final String enderecoFormatado =
+        "${endereco.rua}, ${endereco.numero}${endereco.complemento.isNotEmpty ? ' - ${endereco.complemento}' : ''}. "
+        "${endereco.bairro}, ${endereco.cidade} - ${endereco.estado}. CEP: ${endereco.cep}";
+
     for (var mercadoId in agrupamento.keys) {
       final itensDoMercado = agrupamento[mercadoId]!;
       final formaPgto = pagamentos[mercadoId] ?? 'Não selecionado';
@@ -130,7 +135,6 @@ class UsuarioService {
         return itemMap;
       }).toList();
 
-      // 2. Calculando o subtotal baseado nos itens processados
       double subtotalProdutos =
           itensDoMercado.fold(0, (sum, item) => sum + item.total);
 
@@ -141,7 +145,7 @@ class UsuarioService {
         clienteId: cliente.uid,
         nomeCliente: cliente.nome,
         telefoneCliente: cliente.telefone,
-        enderecoEntrega: cliente.endereco,
+        enderecoEntrega: enderecoFormatado,
         latitude: cliente.latitude ?? 0.0,
         longitude: cliente.longitude ?? 0.0,
         itens: itensProcessados,

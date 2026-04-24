@@ -1,22 +1,24 @@
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:mercado_app/services/shared/mercado_shared_provider.dart';
 import 'package:mercado_app/target/lojista/login/tela_selecao_mercado.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // Importações dos serviços e modelos
-import 'package:mercado_app/services/carrinho_service.dart';
+import 'package:mercado_app/services/cliente/carrinho_service.dart';
 import 'package:mercado_app/target/cliente/pages/main_navigation.dart';
 import 'package:mercado_app/target/shared/pages/login_page.dart';
-import 'package:mercado_app/target/funcionario/pages/selecao_modo_page.dart';
+import 'package:mercado_app/target/funcionario/pages/tela_selecao_modo.dart';
 
-import 'package:mercado_app/services/usuario_provider.dart';
-import 'package:mercado_app/services/lojista_provider.dart';
-import 'package:mercado_app/services/funcionario_provider.dart';
+import 'package:mercado_app/services/shared/usuario_provider.dart';
+import 'package:mercado_app/services/lojista/lojista_provider.dart';
+import 'package:mercado_app/services/funcionario/funcionario_provider.dart';
 
 import 'app_theme.dart';
 
@@ -29,6 +31,12 @@ void main() async {
     anonKey:
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvcmh0d3dicXBsanp3dWt4b3R1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjMyOTIsImV4cCI6MjA5MjEzOTI5Mn0.BE5ZID-JSqqyp4xv2CEIgSb4ZyuiubuhzaU1J4SoDng',
   );
+
+  // Carrega o seu arquivo de chaves (IA)
+  await dotenv.load(fileName: "chaves.env");
+
+  final usuarioProvider = UsuarioProvider();
+  await usuarioProvider.inicializar();
 
   // 2. VERIFICAÇÃO LOCAL INSTANTÂNEA (Persistência do Funcionário)
   final prefs = await SharedPreferences.getInstance();
@@ -43,14 +51,26 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => CarrinhoService()),
-        ChangeNotifierProvider(create: (_) => UsuarioProvider()),
-        ChangeNotifierProvider(create: (_) => LojistaProvider()),
-        ChangeNotifierProvider(
-          create: (_) => FuncionarioProvider(
+        ChangeNotifierProvider.value(value: usuarioProvider),
+        ChangeNotifierProvider(create: (_) => MercadoSharedProvider()),
+        ChangeNotifierProxyProvider<MercadoSharedProvider, LojistaProvider>(
+          create: (context) => LojistaProvider(
+            mercadoSharedProvider:
+                Provider.of<MercadoSharedProvider>(context, listen: false),
+          ),
+          update: (context, mercadoShared, lojista) =>
+              lojista!..mercadoSharedProvider = mercadoShared,
+        ),
+        ChangeNotifierProxyProvider<MercadoSharedProvider, FuncionarioProvider>(
+          create: (context) => FuncionarioProvider(
             isFuncionario: ehFuncionarioPersistido,
             mercadoId: mercadoIdPersistido,
             funcionarioId: funcionarioIdPersistido,
+            mercadoSharedProvider:
+                Provider.of<MercadoSharedProvider>(context, listen: false),
           ),
+          update: (context, mercadoShared, funcionario) =>
+              funcionario!..mercadoSharedProvider = mercadoShared,
         ),
       ],
       child: const MyApp(),
@@ -71,8 +91,6 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
-// lib/main.dart
 
 class PlatformSelector extends StatelessWidget {
   const PlatformSelector({super.key});
