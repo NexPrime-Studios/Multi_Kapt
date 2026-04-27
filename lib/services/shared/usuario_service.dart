@@ -5,6 +5,7 @@ import '../../models/mercado.dart';
 import '../../models/produto.dart';
 import '../../models/pedido.dart';
 import '../../models/carrinho_item.dart';
+import '../../models/unidade_medida_enums.dart';
 import '../../models/usuario.dart';
 import '../../models/item_pedido.dart';
 

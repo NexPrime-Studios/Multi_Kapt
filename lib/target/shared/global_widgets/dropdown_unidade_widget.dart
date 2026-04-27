@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../models/produto_enums.dart';
+import '../../../models/unidade_medida_enums.dart';
 
 class DropdownUnidadeWidget extends StatelessWidget {
   final UnidadeMedida value;
@@ -22,7 +22,7 @@ class DropdownUnidadeWidget extends StatelessWidget {
       children: [
         if (mostrarLabel)
           Padding(
-            padding: const EdgeInsets.only(bottom: 8, left: 4),
+            padding: const EdgeInsets.only(left: 4),
             child: Text(
               "Unidade",
               style: theme.textTheme.titleSmall

@@ -102,7 +102,7 @@ class _TelaMapaSelecaoState extends State<TelaMapaSelecao> {
               initialCenter: _pontoAtual,
               initialZoom: 16,
               onPositionChanged: (pos, hasGesture) {
-                if (hasGesture) _pontoAtual = pos.center!;
+                if (hasGesture) _pontoAtual = pos.center;
               },
             ),
             children: [

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../../models/produto.dart';
 import '../../../../models/item_mercado.dart';
 import '../../../../models/mercado.dart';
+import '../../../../models/unidade_medida_enums.dart';
 import '../../../../services/cliente/carrinho_service.dart';
 import '../seletor_quantidade_widget.dart';
 import 'painel_recado_produto.dart';

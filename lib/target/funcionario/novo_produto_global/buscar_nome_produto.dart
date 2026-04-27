@@ -116,7 +116,8 @@ class _SelecaoNomePickerState extends State<SelecaoNomePicker> {
                     decoration: InputDecoration(
                       labelText: "Nome do Produto",
                       filled: true,
-                      fillColor: colorScheme.surfaceVariant.withOpacity(0.1),
+                      fillColor:
+                          colorScheme.surfaceContainerHighest.withOpacity(0.1),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -179,7 +180,8 @@ class _SelecaoNomePickerState extends State<SelecaoNomePicker> {
                 itemBuilder: (context, index) {
                   final nome = _sugestoesNomes[index];
                   return ListTile(
-                    tileColor: colorScheme.surfaceVariant.withOpacity(0.3),
+                    tileColor:
+                        colorScheme.surfaceContainerHighest.withOpacity(0.3),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16)),
                     leading: Icon(Icons.shopping_bag_outlined,

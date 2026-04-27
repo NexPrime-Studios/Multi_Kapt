@@ -33,4 +33,5 @@ android/key.properties
 *.keystore
 
 # Variáveis de ambiente
+chaves.env
 .env

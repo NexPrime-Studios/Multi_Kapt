@@ -216,7 +216,7 @@ class _SelecaoDadosIAState extends State<SelecaoDadosIA> {
                                 },
                               ),
                             );
-                          }).toList(),
+                          }),
                         ],
                       ),
                     ),

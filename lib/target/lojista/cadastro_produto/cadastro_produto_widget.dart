@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../models/produto.dart';
 import '../../../../models/produto_enums.dart';
 import '../../../../models/tags_helper.dart';
+import '../../../models/unidade_medida_enums.dart';
 import '../../../services/lojista/lojista_service.dart';
 import '../../../services/shared/imagem_service.dart';
 import '../widgets/campo_formulario.dart';
@@ -39,7 +40,7 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
   final _urlImagemController = TextEditingController();
 
   Uint8List? _novaImagemBytes;
-  CategoriaProduto _categoria = CategoriaProduto.mercearia;
+  CategoriaProduto _categoria = CategoriaProduto.outros;
   UnidadeMedida _unidade = UnidadeMedida.unidade;
   final List<String> _tagsSelecionadas = [];
   bool _salvando = false;
@@ -59,8 +60,8 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
       _marcaController.text = p.marca;
       _descController.text = p.descricao;
       _urlImagemController.text = p.fotoUrl;
-      _barrasController.text = p.codigoBarras;
-      _categoria = p.categoria;
+      _barrasController.text = p.codigoBarras ?? '';
+      _categoria = CategoriaProduto.outros;
       _unidade = p.unidadeMedida;
       _tagsSelecionadas.clear();
       _tagsSelecionadas.addAll(p.tags);
@@ -110,9 +111,13 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
         fotoUrl: fotoUrl,
         marca: _marcaController.text.trim(),
         codigoBarras: _barrasController.text.trim(),
-        categoria: _categoria,
+        tipo: TipoProduto.industrial,
+        categoria: 'teste',
+        subcategoria: idProduto,
+        produtoBase: 'teste',
         unidadeMedida: _unidade,
         tags: _tagsSelecionadas,
+        quantidadeConteudo: 0.0,
       );
 
       await _service.salvarProduto(produtoDados);
@@ -177,13 +182,6 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
   Widget _renderizarConteudo() {
     switch (_telaAtual) {
       case TelaDialog.menu:
-        return MenuEscolhaCadastro(
-          onNovoProduto: () =>
-              setState(() => _telaAtual = TelaDialog.formulario),
-          onEditarProduto: () =>
-              setState(() => _telaAtual = TelaDialog.buscaEdicao),
-          onScanCodigo: () => setState(() => _telaAtual = TelaDialog.scanner),
-        );
       case TelaDialog.buscaEdicao:
         return _buildBuscaEdicao();
       case TelaDialog.formulario:
@@ -217,8 +215,9 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
           child: StreamBuilder<List<Produto>>(
             stream: _service.listarProdutosGlobais(),
             builder: (context, snapshot) {
-              if (!snapshot.hasData)
+              if (!snapshot.hasData) {
                 return const Center(child: CircularProgressIndicator());
+              }
               final produtos = snapshot.data!
                   .where((p) =>
                       p.nome
@@ -228,8 +227,9 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
                           .toLowerCase()
                           .contains(_filtroBusca.toLowerCase()))
                   .toList();
-              if (produtos.isEmpty)
+              if (produtos.isEmpty) {
                 return const Center(child: Text("Nenhum produto encontrado."));
+              }
               return ListView.builder(
                 itemCount: produtos.length,
                 itemBuilder: (context, i) => ListTile(
@@ -364,7 +364,7 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
 
   Widget _buildDropdownCategoria() {
     return DropdownButtonFormField<CategoriaProduto>(
-      value: _categoria,
+      initialValue: _categoria,
       decoration: const InputDecoration(labelText: "Categoria"),
       items: CategoriaProduto.values
           .map((c) => DropdownMenuItem(value: c, child: Text(c.name)))
@@ -378,7 +378,7 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
 
   Widget _buildDropdownUnidadeCompacta() {
     return DropdownButtonFormField<UnidadeMedida>(
-      value: _unidade,
+      initialValue: _unidade,
       decoration: const InputDecoration(labelText: "Unidade"),
       items: UnidadeMedida.values
           .map((u) => DropdownMenuItem(value: u, child: Text(u.sigla)))

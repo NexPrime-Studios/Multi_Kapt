@@ -11,6 +11,7 @@ class CampoTextoWidget extends StatelessWidget {
   final int maxLines;
   final IconData? icon;
   final bool enabled;
+  final TextCapitalization capitalization;
 
   const CampoTextoWidget({
     super.key,
@@ -23,6 +24,7 @@ class CampoTextoWidget extends StatelessWidget {
     this.maxLines = 1,
     this.icon,
     this.enabled = true,
+    this.capitalization = TextCapitalization.none,
   });
 
   @override
@@ -36,6 +38,7 @@ class CampoTextoWidget extends StatelessWidget {
         obscureText: obscure,
         keyboardType: type,
         inputFormatters: formatters,
+        textCapitalization: capitalization,
         maxLines: maxLines,
         enabled: enabled,
         decoration: InputDecoration(
@@ -45,9 +48,28 @@ class CampoTextoWidget extends StatelessWidget {
               : null,
         ),
         validator: enabled
-            ? (validator ?? (v) => v!.isEmpty ? "Campo obrigatório" : null)
+            ? (validator ??
+                (v) => v != null && v.isEmpty ? "Campo obrigatório" : null)
             : null,
       ),
     );
+  }
+}
+
+/// Formatador para forçar texto em MAIÚSCULO
+class UpperCaseTextFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    return newValue.copyWith(text: newValue.text.toUpperCase());
+  }
+}
+
+/// Formatador para forçar texto em minúsculo
+class LowerCaseTextFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    return newValue.copyWith(text: newValue.text.toLowerCase());
   }
 }

@@ -57,10 +57,10 @@ class _SeletorProdutosGlobaisState extends State<SeletorProdutosGlobais> {
                 produtoImagem:
                     produto.fotoUrl, // <--- Dado duplicado para performance
                 produtoCategoria:
-                    produto.categoria.name, // <--- Categoria para filtros
+                    produto.categoria, // <--- Categoria para filtros
                 preco: preco,
                 disponivel: true,
-                codigoBarras: produto.codigoBarras,
+                codigoBarras: produto.codigoBarras ?? '',
               );
 
               // Chamada via Provider para manter o estado global atualizado

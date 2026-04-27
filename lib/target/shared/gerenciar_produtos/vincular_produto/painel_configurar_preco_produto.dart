@@ -46,10 +46,10 @@ class _PainelConfigurarPrecoProdutoState
         produtoId: widget.produto.id,
         produtoNome: widget.produto.nome,
         produtoImagem: widget.produto.fotoUrl,
-        codigoBarras: widget.produto.codigoBarras,
+        codigoBarras: widget.produto.codigoBarras ?? '',
         preco: preco,
         disponivel: true,
-        produtoCategoria: widget.produto.categoria.name,
+        produtoCategoria: widget.produto.categoria,
       );
 
       await provider.adicionarProduto(novoItem);

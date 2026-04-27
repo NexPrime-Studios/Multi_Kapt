@@ -32,7 +32,7 @@ class CardProdutoInventario extends StatelessWidget {
                   child: Container(
                     width: 40,
                     height: 40,
-                    color: colorScheme.surfaceVariant,
+                    color: colorScheme.surfaceContainerHighest,
                     child: item.produtoImagem.isNotEmpty
                         ? Image.network(item.produtoImagem, fit: BoxFit.cover)
                         : Icon(Icons.image_not_supported,
@@ -92,7 +92,7 @@ class CardProdutoInventario extends StatelessWidget {
                         scale: 0.7,
                         child: Switch(
                           value: item.disponivel,
-                          activeColor: Colors.green,
+                          activeThumbColor: Colors.green,
                           onChanged: (val) async {
                             final itemEditado = item.copyWith(disponivel: val);
                             await mercadoProv.atualizarItem(itemEditado);

@@ -145,7 +145,7 @@ class _SeletorLocalizacaoWidgetState extends State<SeletorLocalizacaoWidget> {
                   child: DropdownButtonFormField<String>(
                     // AQUI ESTÁ A CORREÇÃO:
                     // Se o estado salvo não existir na lista do JSON, fica null e não quebra.
-                    value: _estados.contains(_estadoController.text)
+                    initialValue: _estados.contains(_estadoController.text)
                         ? _estadoController.text
                         : null,
                     isExpanded: true,

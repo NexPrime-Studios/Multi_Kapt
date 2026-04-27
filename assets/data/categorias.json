@@ -1,0 +1,158 @@
+{
+  "merceariaDoce": {
+    "biscoitos": [
+      { "produtoBase": "Biscoito Recheado", "variacoes": ["Chocolate", "Morango", "Baunilha", "Doce de Leite"] },
+      { "produtoBase": "Bolacha Maria/Maisena", "variacoes": ["Tradicional", "Chocolate", "Integral"] },
+      { "produtoBase": "Wafer", "variacoes": ["Chocolate", "Avelã", "Limão", "Morango"] },
+      { "produtoBase": "Biscoito de Polvilho", "variacoes": ["Salgado", "Doce"] },
+      { "produtoBase": "Rosquinhas", "variacoes": ["Coco", "Chocolate", "Leite"] }
+    ],
+    "chocolates": [
+      { "produtoBase": "Barra de Chocolate", "variacoes": ["Ao Leite", "Meio Amargo", "Branco", "Com Amêndoas"] },
+      { "produtoBase": "Achocolatado", "variacoes": ["Pó 400g", "Pó 800g", "Líquido 200ml", "Diet"] },
+      { "produtoBase": "Caixa de Bombom", "variacoes": ["Nestlé", "Garoto", "Lacta"] }
+    ],
+    "sobremesas": [
+      { "produtoBase": "Gelatina", "variacoes": ["Morango", "Uva", "Abacaxi", "Zero Açúcar"] },
+      { "produtoBase": "Leite Condensado", "variacoes": ["Integral", "Semidesnatado", "Zero Lactose"] },
+      { "produtoBase": "Creme de Leite", "variacoes": ["Tradicional", "Leve", "Zero Lactose"] },
+      { "produtoBase": "Mistura para Bolo", "variacoes": ["Chocolate", "Festa", "Laranja", "Cenoura"] },
+      { "produtoBase": "Doce de Leite", "variacoes": ["Pastoso", "Em Cubos"] }
+    ]
+  },
+  "merceariaSalgada": {
+    "graos_e_massas": [
+      { "produtoBase": "Arroz", "variacoes": ["Agulhinha T1 5kg", "Integral 1kg", "Parboilizado 5kg"] },
+      { "produtoBase": "Feijão", "variacoes": ["Carioca 1kg", "Preto 1kg", "Fradinho", "Branco"] },
+      { "produtoBase": "Macarrão", "variacoes": ["Espaguete", "Pena", "Parafuso", "Com Ovos", "Instantâneo (Miojo)"] },
+      { "produtoBase": "Farinha de Trigo", "variacoes": ["Tipo 1", "Com Fermento", "Integral"] },
+      { "produtoBase": "Farinha de Mandioca", "variacoes": ["Crua", "Torrada", "Temperada (Farofa)"] },
+      { "produtoBase": "Milho para Pipoca", "variacoes": ["Premium", "Micro-ondas Manteiga", "Micro-ondas Natural"] }
+    ],
+    "oleos_e_molhos": [
+      { "produtoBase": "Óleo de Cozinha", "variacoes": ["Soja 900ml", "Girassol", "Milho"] },
+      { "produtoBase": "Azeite de Oliva", "variacoes": ["Extra Virgem 500ml", "Tipo Único"] },
+      { "produtoBase": "Molho de Tomate", "variacoes": ["Sachê Tradicional", "Manjericão", "Bolognesa", "Extrato de Tomate"] },
+      { "produtoBase": "Condimentos", "variacoes": ["Maionese", "Ketchup", "Mostarda"] },
+      { "produtoBase": "Sal", "variacoes": ["Refinado 1kg", "Grosso para Churrasco"] }
+    ],
+    "conservas_e_enlatados": [
+      { "produtoBase": "Milho Verde", "variacoes": ["Lata", "Sachê"] },
+      { "produtoBase": "Ervilha", "variacoes": ["Lata", "Sachê"] },
+      { "produtoBase": "Sardinha/Atum", "variacoes": ["Óleo", "Molho de Tomate", "Natural"] }
+    ]
+  },
+  "bebidas": {
+    "refrigerantes": [
+      { "produtoBase": "Coca-Cola", "variacoes": ["Lata 350ml", "600ml", "2 Litros", "Sem Açúcar"] },
+      { "produtoBase": "Guaraná", "variacoes": ["Antarctica 2L", "Regional/Marca da Casa", "Zero"] },
+      { "produtoBase": "Sabor Laranja/Limão", "variacoes": ["Fanta Laranja", "Fanta Uva", "Sprite"] }
+    ],
+    "sucos_e_chas": [
+      { "produtoBase": "Suco de Caixinha", "variacoes": ["Uva 1L", "Laranja 1L", "Pêssego", "Caju"] },
+      { "produtoBase": "Suco em Pó", "variacoes": ["Morango", "Uva", "Abacaxi", "Laranja"] },
+      { "produtoBase": "Chá Pronto", "variacoes": ["Mate", "Pêssego", "Limão"] }
+    ],
+    "agua": [
+      { "produtoBase": "Água Mineral", "variacoes": ["500ml Sem Gás", "500ml Com Gás", "1.5L", "Galão 5L", "Galão 20L"] }
+    ]
+  },
+  "friosLaticinios": {
+    "queijos_e_frios": [
+      { "produtoBase": "Mussarela", "variacoes": ["Fatiada (100g/200g)", "Peça Inteira"] },
+      { "produtoBase": "Presunto", "variacoes": ["Fatiado", "Apresuntado"] },
+      { "produtoBase": "Queijo Minas", "variacoes": ["Frescal", "Padrão"] },
+      { "produtoBase": "Requeijão", "variacoes": ["Tradicional", "Cheddar", "Light"] }
+    ],
+    "manteigas_e_margarinas": [
+      { "produtoBase": "Margarina", "variacoes": ["Com Sal 500g", "Sem Sal", "Com Sal 250g"] },
+      { "produtoBase": "Manteiga", "variacoes": ["Pote", "Tablete"] }
+    ],
+    "leites_e_iogurtes": [
+      { "produtoBase": "Leite UHT (Caixinha)", "variacoes": ["Integral", "Desnatado", "Semidesnatado", "Zero Lactose"] },
+      { "produtoBase": "Iogurte de Bandeja", "variacoes": ["Morango", "Coco", "Salada de Frutas"] },
+      { "produtoBase": "Leite Fermentado", "variacoes": ["Unitário", "Pack com 6"] }
+    ]
+  },
+  "hortifruti": {
+    "frutas": [
+      { "produtoBase": "Banana", "variacoes": ["Nanica (kg)", "Prata (kg)"] },
+      { "produtoBase": "Maçã", "variacoes": ["Gala (Unidade)", "Fuji (Unidade)"] },
+      { "produtoBase": "Laranja", "variacoes": ["Pêra (Saco 5kg)", "Lima (kg)"] },
+      { "produtoBase": "Mamão", "variacoes": ["Papaia", "Formosa"] }
+    ],
+    "legumes_e_verduras": [
+      { "produtoBase": "Batata", "variacoes": ["Inglesa (kg)", "Doce (kg)"] },
+      { "produtoBase": "Cebola", "variacoes": ["Nacional (kg)", "Roxa (kg)"] },
+      { "produtoBase": "Alface", "variacoes": ["Crespa (Maço)", "Americana"] },
+      { "produtoBase": "Tomate", "variacoes": ["Saladete (kg)", "Cereja"] },
+      { "produtoBase": "Ovos", "variacoes": ["Branco (Dúzia)", "Branco (30 un)", "Caipira"] }
+    ]
+  },
+  "acougue": {
+    "carne_bovina": [
+      { "produtoBase": "Carne Moída", "variacoes": ["Patinho", "Acém"] },
+      { "produtoBase": "Bife", "variacoes": ["Alcatra", "Contra-Filé", "Coxão Mole"] },
+      { "produtoBase": "Churrasco", "variacoes": ["Picanha", "Costela", "Maminha"] }
+    ],
+    "aves_e_suinos": [
+      { "produtoBase": "Frango", "variacoes": ["Peito (Filé)", "Coxa e Sobrecoxa", "Frango Inteiro"] },
+      { "produtoBase": "Linguiça", "variacoes": ["Toscana (Churrasco)", "Paio", "Calabresa"] },
+      { "produtoBase": "Carne de Porco", "variacoes": ["Bisteca", "Lombo", "Panceta"] }
+    ]
+  },
+  "limpeza": {
+    "lavanderia": [
+      { "produtoBase": "Sabão em Pó", "variacoes": ["1kg Omo/Ariel", "1kg Marca Econômica"] },
+      { "produtoBase": "Sabão em Barra", "variacoes": ["Azul (Unidade)", "Coco (Unidade)", "Pacote com 5"] },
+      { "produtoBase": "Amaciante", "variacoes": ["Tradicional 2L", "Concentrado 500ml"] },
+      { "produtoBase": "Alvejante/Água Sanitária", "variacoes": ["Com Cloro 1L", "Sem Cloro (Roupas Coloridas)"] }
+    ],
+    "cozinha_e_casa": [
+      { "produtoBase": "Detergente", "variacoes": ["Neutro", "Maçã", "Limão", "Coco"] },
+      { "produtoBase": "Esponja de Aço", "variacoes": ["Bombril/Assolan (Pack)"] },
+      { "produtoBase": "Esponja de Louça", "variacoes": ["Dupla Face (Unid)", "Pack com 3"] },
+      { "produtoBase": "Desinfetante", "variacoes": ["Lavanda", "Pinho", "Eucalipto"] }
+    ]
+  },
+  "higienePessoal": {
+    "banho_e_pos_banho": [
+      { "produtoBase": "Sabonete", "variacoes": ["Barra Fragrâncias", "Barra Antibacteriano"] },
+      { "produtoBase": "Shampoo/Condicionador", "variacoes": ["Cabelos Lisos", "Cachos", "Anticaspa"] },
+      { "produtoBase": "Desodorante", "variacoes": ["Aerosol Masculino", "Aerosol Feminino", "Roll-on"] }
+    ],
+    "higiene_diaria": [
+      { "produtoBase": "Papel Higiênico", "variacoes": ["Folha Simples (4 un)", "Folha Dupla (4 un)", "Pacote Leve 12 Pague 11"] },
+      { "produtoBase": "Creme Dental", "variacoes": ["Proteção Caries", "Branqueador"] },
+      { "produtoBase": "Absorvente", "variacoes": ["Com Abas", "Sem Abas", "Noturno"] }
+    ]
+  },
+  "padaria": {
+    "paes_e_bolos": [
+      { "produtoBase": "Pão Francês", "variacoes": ["Unidade", "Saco com 5", "Saco com 10"] },
+      { "produtoBase": "Pão de Forma", "variacoes": ["Tradicional", "Integral", "Centeio"] },
+      { "produtoBase": "Pão de Queijo", "variacoes": ["Unidade Assado", "Congelado 500g"] },
+      { "produtoBase": "Bolo Simples", "variacoes": ["Fubá", "Laranja", "Chocolate"] }
+    ]
+  },
+  "petShop": {
+    "caes_e_gatos": [
+      { "produtoBase": "Ração Cães", "variacoes": ["Adulto (kg Avulso)", "Adulto (Saco 10kg)", "Filhote (kg Avulso)"] },
+      { "produtoBase": "Ração Gatos", "variacoes": ["Castrados", "Adulto Peixe/Carne"] },
+      { "produtoBase": "Areia Sanitária", "variacoes": ["Saco 4kg"] },
+      { "produtoBase": "Sachê/Patê", "variacoes": ["Cão Carne", "Gato Peixe"] }
+    ]
+  },
+  "bazar_e_utilidades": {
+    "casa": [
+      { "produtoBase": "Lâmpada LED", "variacoes": ["9W Branca", "12W Branca"] },
+      { "produtoBase": "Pilha", "variacoes": ["AA (2 un)", "AAA (Palito - 2 un)"] },
+      { "produtoBase": "Vela", "variacoes": ["Pacote com 8 unidades"] },
+      { "produtoBase": "Fósforo", "variacoes": ["Maço com 10 caixas"] }
+    ],
+    "churrasco": [
+      { "produtoBase": "Carvão", "variacoes": ["Saco 3kg", "Saco 5kg"] },
+      { "produtoBase": "Acendedor", "variacoes": ["Álcool Gel", "Sólido"] }
+    ]
+  }
+}

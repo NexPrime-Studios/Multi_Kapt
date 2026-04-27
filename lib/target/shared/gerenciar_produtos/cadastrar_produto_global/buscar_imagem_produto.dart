@@ -5,15 +5,25 @@ import 'package:http/http.dart' as http;
 import 'package:webview_flutter/webview_flutter.dart';
 
 class BuscarImagemProduto {
-  Future<Uint8List?> buscarProduto(BuildContext context, String barcode) async {
+  Future<Uint8List?> buscarProduto(
+      BuildContext context, String valor, bool isIndustrial) async {
+    String termoBusca;
+    if (isIndustrial) {
+      termoBusca = valor;
+    } else {
+      termoBusca =
+          "$valor professional food product photography white background";
+    }
+
+    // 2. URL com SafeSearch Ativo
     final String googleUrl =
-        "https://www.google.com.br/search?q=$barcode&tbm=isch&safe=active";
+        "https://www.google.com.br/search?q=${Uri.encodeComponent(termoBusca)}&tbm=isch&safe=active";
 
     final Uint8List? imagemFinal = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) =>
-            SelecaoImagemPicker(url: googleUrl, barcode: barcode),
+            SelecaoImagemPicker(url: googleUrl, termoBusca: valor),
       ),
     );
 
@@ -23,12 +33,12 @@ class BuscarImagemProduto {
 
 class SelecaoImagemPicker extends StatefulWidget {
   final String url;
-  final String barcode;
+  final String termoBusca;
 
   const SelecaoImagemPicker({
     super.key,
     required this.url,
-    required this.barcode,
+    required this.termoBusca,
   });
 
   @override
@@ -73,6 +83,7 @@ class _SelecaoImagemPickerState extends State<SelecaoImagemPicker> {
   void _extrairLinks() {
     _controller.runJavaScript('''
       setTimeout(() => {
+        const blacklist = ['adult', 'sexy', 'nudity', 'violence', 'blood'];
         const query = 'div[data-ou]'; 
         const items = Array.from(document.querySelectorAll(query));
         
@@ -91,11 +102,17 @@ class _SelecaoImagemPickerState extends State<SelecaoImagemPicker> {
         }
 
         const finalLinks = links
-          .filter(src => src && src.startsWith('http') && !src.includes('cleardot.gif') && !src.includes('encrypted'))
-          .slice(0, 20); 
+          .filter(src => {
+            if (!src || !src.startsWith('http') || src.includes('cleardot.gif') || src.includes('encrypted')) {
+              return false;
+            }
+            // Filtro adicional de segurança por palavras na URL
+            return !blacklist.some(word => src.toLowerCase().includes(word));
+          })
+          .slice(0, 24); 
         
         Extractor.postMessage(JSON.stringify(finalLinks));
-      }, 2000);
+      }, 1500);
     ''');
   }
 
@@ -133,7 +150,6 @@ class _SelecaoImagemPickerState extends State<SelecaoImagemPicker> {
       if (!mounted) return;
       Navigator.pop(context); // Fecha loading
 
-      // Popup de Confirmação com Estilo do Tema e botão "X"
       final bool? confirmar = await showDialog<bool>(
         context: context,
         builder: (context) => Dialog(
@@ -176,7 +192,6 @@ class _SelecaoImagemPickerState extends State<SelecaoImagemPicker> {
                 child: IconButton(
                   onPressed: () => Navigator.pop(context, false),
                   icon: const Icon(Icons.close),
-                  color: colorScheme.primary.withOpacity(0.5),
                 ),
               ),
             ],
@@ -199,12 +214,13 @@ class _SelecaoImagemPickerState extends State<SelecaoImagemPicker> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Escolha uma imagem"),
+        title: Text("Buscando: ${widget.termoBusca}"),
         backgroundColor: colorScheme.primary,
         foregroundColor: Colors.white,
       ),
       body: Column(
         children: [
+          // WebView invisível para processamento
           SizedBox(height: 1, child: WebViewWidget(controller: _controller)),
           if (_isExtracting)
             Expanded(
@@ -225,8 +241,6 @@ class _SelecaoImagemPickerState extends State<SelecaoImagemPicker> {
                     childAspectRatio: 1),
                 itemCount: _imageUrls.length,
                 itemBuilder: (context, index) {
-                  if (index >= _imageUrls.length)
-                    return const SizedBox.shrink();
                   final url = _imageUrls[index];
 
                   return GestureDetector(
@@ -251,15 +265,11 @@ class _SelecaoImagemPickerState extends State<SelecaoImagemPicker> {
                             : Image.network(
                                 url,
                                 fit: BoxFit.cover,
-                                loadingBuilder:
-                                    (context, child, loadingProgress) {
-                                  if (loadingProgress == null) return child;
-                                  return Center(
+                                loadingBuilder: (context, child, progress) {
+                                  if (progress == null) return child;
+                                  return const Center(
                                       child: CircularProgressIndicator(
-                                    color:
-                                        colorScheme.secondary.withOpacity(0.5),
-                                    strokeWidth: 2,
-                                  ));
+                                          strokeWidth: 2));
                                 },
                                 errorBuilder: (context, error, stackTrace) {
                                   _removerImagemQuebrada(url);

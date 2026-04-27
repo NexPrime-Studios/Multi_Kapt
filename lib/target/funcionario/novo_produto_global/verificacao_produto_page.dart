@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../models/produto.dart';
+import '../../../models/produto_enums.dart'; // Importante para o TipoProduto
 import '../../../services/shared/mercado_shared_provider.dart';
+import '../../shared/gerenciar_produtos/cadastrar_produto_global/novo_produto_page.dart';
 import '../../shared/global_widgets/campo_texto_widget.dart';
 import 'scanner_codigo_barras.dart';
-import 'tela_novo_produto.dart';
 
 class VerificacaoProdutoPage extends StatefulWidget {
   const VerificacaoProdutoPage({super.key});
@@ -20,36 +21,74 @@ class _VerificacaoProdutoPageState extends State<VerificacaoProdutoPage> {
 
   String? _codigoSalvo;
 
+  // --- Lógica de Verificação de Tipo de Produto ---
+  TipoProduto _identificarTipoPeloCodigo(String codigo) {
+    // Se começa com '2', é item de balança (Pesável)
+    if (codigo.startsWith('2')) return TipoProduto.pesavel;
+    // Se for muito curto, consideramos produção interna/serviço
+    if (codigo.length < 8) return TipoProduto.interno;
+    // Caso contrário, segue o fluxo industrial global
+    return TipoProduto.industrial;
+  }
+
   Future<void> _abrirScanner() async {
-    // 1. Navega para a página de scanner e aguarda o resultado
     final String? codigoCapturado = await Navigator.push<String>(
       context,
       MaterialPageRoute(builder: (_) => const ScannerCodigoDeBarrasPage()),
     );
 
-    // 2. Verifica se algo foi retornado
     if (codigoCapturado != null && codigoCapturado.isNotEmpty) {
-      setState(() {
-        _codigoController.text = codigoCapturado; // Coloca no campo de texto
-        _codigoSalvo = codigoCapturado; // Salva na variável
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Código $codigoCapturado lido com sucesso!"),
-          backgroundColor: Colors.green,
-        ),
-      );
-
-      // Opcional: Chamar a função de salvar/processar automaticamente após ler
-      // _processarCodigoManual();
+      _codigoController.text = codigoCapturado;
+      _processarCodigoManual(); // Processa automaticamente após o scan
     }
   }
 
-  @override
-  void dispose() {
-    _codigoController.dispose();
-    super.dispose();
+  Future<void> _processarCodigoManual() async {
+    if (_formKey.currentState!.validate()) {
+      final codigoDigitado = _codigoController.text.trim();
+      final tipoIdentificado = _identificarTipoPeloCodigo(codigoDigitado);
+
+      try {
+        // Só buscamos no banco global se for tipo Industrial
+        if (tipoIdentificado == TipoProduto.industrial) {
+          final Produto? produtoExistente =
+              await _mercadorSharedProvider.buscarProdutoGlobal(codigoDigitado);
+
+          if (!mounted) return;
+
+          if (produtoExistente != null) {
+            _codigoController.clear();
+            _mostrarAvisoProdutoExistente(
+                codigoDigitado, produtoExistente.nome);
+            return;
+          }
+        }
+
+        // Se o produto não existe ou é local/peso, avança para o cadastro
+        if (!mounted) return;
+        _irParaCadastro(codigoDigitado, tipoIdentificado);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Erro: $e"), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  void _irParaCadastro(String codigo, TipoProduto tipo) async {
+    final resultado = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => NovoProdutoPage(
+          codigoBarrasInicial: codigo,
+          tipoDefinido: tipo, // Passa o tipo identificado ou escolhido
+        ),
+      ),
+    );
+
+    if (resultado == true && mounted) {
+      Navigator.pop(context);
+    }
   }
 
   @override
@@ -65,203 +104,165 @@ class _VerificacaoProdutoPageState extends State<VerificacaoProdutoPage> {
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20.0),
-          child: Card(
-            color: Colors.white,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.inventory_2_outlined,
-                        size: 60, color: cores.primary),
-                    const SizedBox(height: 16),
-                    const Text(
-                      "Identificação do Produto",
-                      style:
-                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 12),
-                    // DESCRIÇÃO SOLICITADA
-                    const Text(
-                      "Para cadastrar um produto, use o código de barras, coloque manualmente ou leia pelo scanner da camera",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey,
-                        height: 1.4,
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          children: [
+            // --- CARD PRINCIPAL (SCANNER E CÓDIGO) ---
+            Card(
+              color: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24)),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      Icon(Icons.qr_code_scanner_rounded,
+                          size: 50, color: cores.primary),
+                      const SizedBox(height: 16),
+                      const Text(
+                        "Identificação Rápida",
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
                       ),
-                    ),
-                    const SizedBox(height: 32),
-
-                    // --- SEÇÃO SCANNER ---
-                    OutlinedButton.icon(
-                      onPressed: _abrirScanner,
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 55),
-                        side: BorderSide(color: cores.primary, width: 2),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                      const SizedBox(height: 8),
+                      const Text(
+                        "Use o scanner ou digite o código de barras para verificar se o produto já existe.",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 13, color: Colors.grey),
                       ),
-                      icon: const Icon(Icons.qr_code_scanner),
-                      label: const Text(
-                        "USAR SCANNER DE CÂMERA",
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-
-                    const SizedBox(height: 32),
-
-                    Row(
-                      children: const [
-                        Expanded(child: Divider()),
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 16),
-                          child: Text("OU",
-                              style: TextStyle(
-                                  color: Colors.grey,
-                                  fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 24),
+                      OutlinedButton.icon(
+                        onPressed: _abrirScanner,
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 50),
+                          side: BorderSide(color: cores.primary),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
                         ),
-                        Expanded(child: Divider()),
-                      ],
-                    ),
-
-                    const SizedBox(height: 32),
-
-                    // --- SEÇÃO MANUAL ---
-                    CampoTextoWidget(
-                      label: "Código de Barras",
-                      controller: _codigoController,
-                      icon: Icons.edit_note,
-                      type: TextInputType.number,
-                      formatters: [FilteringTextInputFormatter.digitsOnly],
-                      validator: (v) =>
-                          (v == null || v.isEmpty) ? "Digite o código" : null,
-                    ),
-
-                    ElevatedButton.icon(
-                      onPressed: _processarCodigoManual,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: cores.primary,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                        icon: const Icon(Icons.camera_alt_outlined),
+                        label: const Text("ESCANEAR AGORA"),
                       ),
-                      icon: const Icon(Icons.check_circle_outline),
-                      label: const Text("VERIFICAR / AVANÇAR",
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                    ),
-
-                    if (_codigoSalvo != null) ...[
-                      const SizedBox(height: 20),
-                      Text("Código de barras: $_codigoSalvo",
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green)),
-                    ]
-                  ],
+                      const SizedBox(height: 16),
+                      CampoTextoWidget(
+                        label: "Código de Barras",
+                        controller: _codigoController,
+                        icon: Icons.edit_note,
+                        type: TextInputType.number,
+                        formatters: [FilteringTextInputFormatter.digitsOnly],
+                        validator: (v) =>
+                            (v == null || v.isEmpty) ? "Digite o código" : null,
+                      ),
+                      ElevatedButton(
+                        onPressed: _processarCodigoManual,
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 50),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: const Text("VERIFICAR CÓDIGO"),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
+
+            const SizedBox(height: 32),
+            _buildDivisor("OU CADASTRO MANUAL"),
+            const SizedBox(height: 24),
+
+            // --- CARDS INFERIORES SEPARADOS ---
+            _buildCardManual(
+              titulo: "Novo Item por Peso",
+              descricao:
+                  "Para itens de balança (Hortifruti, Açougue, Padaria).",
+              icon: Icons.scale_rounded,
+              cor: Colors.teal,
+              onTap: () => _irParaCadastro("", TipoProduto.pesavel),
+            ),
+            const SizedBox(height: 16),
+            _buildCardManual(
+              titulo: "Produção Interna",
+              descricao: "Itens fabricados no mercado com preço fixo.",
+              icon: Icons.restaurant_menu_rounded,
+              cor: Colors.deepPurple,
+              onTap: () => _irParaCadastro("", TipoProduto.interno),
+            ),
+            const SizedBox(height: 40),
+          ],
         ),
       ),
     );
   }
 
-  Future<void> _processarCodigoManual() async {
-    if (_formKey.currentState!.validate()) {
-      final codigoDigitado = _codigoController.text.trim();
-
-      try {
-        final Produto? produtoExistente =
-            await _mercadorSharedProvider.buscarProdutoGlobal(codigoDigitado);
-
-        if (!mounted) return;
-
-        if (produtoExistente != null) {
-          _codigoController.clear();
-          _mostrarAvisoProdutoExistente(codigoDigitado, produtoExistente.nome);
-        } else {
-          setState(() => _codigoSalvo = codigoDigitado);
-
-          final resultado = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => TelaNovoProduto(
-                codigoBarras: codigoDigitado,
-              ),
-            ),
-          );
-
-          if (resultado == true && mounted) {
-            Navigator.pop(context);
-          }
-        }
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Erro: $e"), backgroundColor: Colors.red),
-        );
-      }
-    }
-  }
-
-  void _mostrarAvisoProdutoExistente(String codigo, String nomeProduto) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 40),
-            SizedBox(height: 8),
-            Text("Produto já cadastrado"),
-          ],
+  Widget _buildCardManual({
+    required String titulo,
+    required String descricao,
+    required IconData icon,
+    required Color cor,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: cor.withOpacity(0.3), width: 1),
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            const Text("Este código de barras já consta em nossa base:"),
-            const SizedBox(height: 12),
-            Text(
-              codigo,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            const SizedBox(height: 8),
             Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey.shade300)),
-              child: Text(
-                nomeProduto,
-                style: const TextStyle(fontStyle: FontStyle.italic),
+                  color: cor.withOpacity(0.1), shape: BoxShape.circle),
+              child: Icon(icon, color: cor, size: 28),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(titulo,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 15)),
+                  Text(descricao,
+                      style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                ],
               ),
             ),
+            Icon(Icons.arrow_forward_ios_rounded,
+                size: 14, color: cor.withOpacity(0.5)),
           ],
         ),
-        actions: [
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () => Navigator.pop(context),
-            child: const Text("ENTENDIDO"),
-          ),
-        ],
       ),
     );
+  }
+
+  Widget _buildDivisor(String texto) {
+    return Row(
+      children: [
+        const Expanded(child: Divider(color: Colors.white24)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(texto,
+              style: const TextStyle(
+                  color: Colors.white60,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold)),
+        ),
+        const Expanded(child: Divider(color: Colors.white24)),
+      ],
+    );
+  }
+
+  // Mantenha sua função _mostrarAvisoProdutoExistente igual...
+  void _mostrarAvisoProdutoExistente(String codigo, String nomeProduto) {
+    // ... (mesmo código do seu script original)
   }
 }

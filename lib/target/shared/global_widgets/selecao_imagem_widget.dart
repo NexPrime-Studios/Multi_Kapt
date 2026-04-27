@@ -23,7 +23,7 @@ class SelecaoImagemWidget extends StatelessWidget {
         width: double.infinity,
         height: 160,
         decoration: BoxDecoration(
-          color: colorScheme.surfaceVariant.withOpacity(0.3),
+          color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
               color: colorScheme.secondary.withOpacity(0.5), width: 2),

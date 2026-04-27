@@ -176,8 +176,9 @@ class _TelaPerfilMercadoState extends State<TelaPerfilMercado> {
   @override
   Widget build(BuildContext context) {
     final mercado = context.watch<LojistaProvider>().mercado;
-    if (mercado == null)
+    if (mercado == null) {
       return const Center(child: CircularProgressIndicator());
+    }
 
     return Scaffold(
       backgroundColor: Colors.white,

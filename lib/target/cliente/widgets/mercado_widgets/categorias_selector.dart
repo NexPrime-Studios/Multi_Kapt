@@ -16,8 +16,6 @@ class CategoriasSelector extends StatelessWidget {
   IconData _getIcone(CategoriaProduto? categoria) {
     if (categoria == null) return Icons.grid_view_rounded;
     switch (categoria) {
-      case CategoriaProduto.mercearia:
-        return Icons.shopping_basket_rounded;
       case CategoriaProduto.bebidas:
         return Icons.local_drink_rounded;
       case CategoriaProduto.hortifruti:
@@ -25,17 +23,9 @@ class CategoriasSelector extends StatelessWidget {
       case CategoriaProduto.acougue:
         return Icons.kebab_dining_rounded;
       case CategoriaProduto.padaria:
-        return Icons.bakery_dining_rounded;
-      case CategoriaProduto.doces:
         return Icons.icecream_outlined;
       case CategoriaProduto.limpeza:
         return Icons.cleaning_services_rounded;
-      case CategoriaProduto.higiene:
-        return Icons.sanitizer_rounded;
-      case CategoriaProduto.frios:
-        return Icons.kitchen_rounded;
-      case CategoriaProduto.petshop:
-        return Icons.pets_rounded;
       default:
         return Icons.category_rounded;
     }

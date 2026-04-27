@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:mercado_app/app_theme.dart';
-import 'package:mercado_app/target/lojista/pages/tela_homepage_lojista.dart';
 import 'package:mercado_app/target/lojista/login/tela_selecao_mercado.dart';
 // Importe apenas os Providers necessários para o Lojista
 import 'package:mercado_app/services/shared/usuario_provider.dart';
-import 'package:mercado_app/services/lojista/lojista_provider.dart';
-import 'package:mercado_app/services/lojista/metricas_service.dart';
 
 void main() {
   runApp(

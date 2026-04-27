@@ -145,7 +145,7 @@ class _SeletorProdutosGlobaisPainelState
                 errorBuilder: (_, __, ___) => Container(
                   width: 60,
                   height: 60,
-                  color: color.surfaceVariant,
+                  color: color.surfaceContainerHighest,
                   child: const Icon(Icons.image_not_supported),
                 ),
               ),
