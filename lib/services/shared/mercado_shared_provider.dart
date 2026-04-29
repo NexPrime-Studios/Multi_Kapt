@@ -7,12 +7,11 @@ import 'mercado_shared_service.dart';
 
 class MercadoSharedProvider with ChangeNotifier {
   final MercadoSharedService _service = MercadoSharedService();
-  StreamSubscription<Mercado>? _mercadoSubscription;
 
   Mercado? _mercado;
   String? _mercadoId;
 
-  /// Lista de itens/produtos vinculados a este mercado
+  /// Lista de itens/preços vinculados a este mercado na tabela produtos_mercado
   List<ItemMercado> _itensMercado = [];
 
   Mercado? get mercado => _mercado;
@@ -23,44 +22,48 @@ class MercadoSharedProvider with ChangeNotifier {
   // MARK: - INICIAR/GERENCIAR MERCADO
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   Future<void> inicializarComMercado(String id) async {
-    if (_mercadoId == id && _mercadoSubscription != null) return;
+    if (_mercadoId == id && _mercado != null) return;
 
     _mercadoId = id;
 
-    await _mercadoSubscription?.cancel();
+    try {
+      _mercado = await _service.buscarMercadoPorId(id);
+      await carregarItensDoMercado();
+      notifyListeners();
+    } catch (e) {
+      debugPrint("Erro ao inicializar mercado: $e");
+    }
+  }
 
-    _mercadoSubscription = _service.streamMercado(id).listen(
-      (mercadoAtualizado) {
-        _mercado = mercadoAtualizado;
-        _itensMercado = mercadoAtualizado.itens;
-        notifyListeners();
-      },
-      onError: (error) {
-        debugPrint("Erro no stream: $error");
-        notifyListeners();
-      },
-    );
+  Future<void> carregarItensDoMercado() async {
+    if (_mercadoId == null) return;
+    try {
+      _itensMercado = await _service.listarItensDoMercado(_mercadoId!);
+      notifyListeners();
+    } catch (e) {
+      debugPrint("Erro ao carregar itens do inventário: $e");
+    }
   }
 
   @override
   void dispose() {
-    _mercadoSubscription?.cancel();
     super.dispose();
   }
 
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   // MARK: - GESTÃO DE PRODUTOS GLOBAIS
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  Future<void> cadastrarProdutoGlobal(Produto produto) async {
+
+  Future<void> criarAtualizarProdutoGlobal(Produto produto) async {
     try {
-      await _service.salvarProdutoGlobal(produto);
+      await _service.criarAtualizarProdutoGlobal(produto);
     } catch (e) {
       debugPrint("Erro no Provider ao cadastrar global: $e");
       rethrow;
     }
   }
 
-  Future<Produto?> buscarProdutoGlobal(String ean) async {
+  Future<Produto?> buscarProdutoGlobalPorEan(String ean) async {
     try {
       return await _service.buscarProdutoGlobal(ean);
     } catch (e) {
@@ -78,42 +81,36 @@ class MercadoSharedProvider with ChangeNotifier {
     }
   }
 
-  Future<List<Produto>> listarProdutosGlobais() async {
+  Future<List<Produto>> listarPrimeirosProdutosGlobais() async {
     try {
-      return await _service.listarProdutosGlobais();
+      return await _service.listarPrimeirosProdutosGlobais();
     } catch (e) {
-      debugPrint("Erro no Provider ao listar produtos aleatórios: $e");
+      debugPrint("Erro no Provider ao listar produtos: $e");
       return [];
     }
   }
 
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  // MARK: - GESTÃO DE INVENTÁRIO
+  // MARK: - GESTÃO DE INVENTÁRIO (PRODUTOS_MERCADO)
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  Future<void> adicionarProduto(ItemMercado item) async {
-    if (_mercadoId == null) return;
+  Future<void> adicionarAtualizarItemNoMercado(ItemMercado item) async {
     try {
-      await _service.adicionarItemAoInventario(_mercadoId!, item);
+      await _service.adicionarAtualizarItemNoMercado(item);
+      await carregarItensDoMercado();
     } catch (e) {
-      debugPrint("Erro ao adicionar produto no Provider: $e");
+      debugPrint("Erro ao salvar item no Provider: $e");
       rethrow;
     }
   }
 
-  Future<void> atualizarItem(ItemMercado item) async {
+  /// Remove o vínculo de um produto com este mercado
+  Future<void> removerItem(String produtoId) async {
     if (_mercadoId == null) return;
     try {
-      await _service.atualizarItemNoInventario(_mercadoId!, item);
-    } catch (e) {
-      debugPrint("Erro ao atualizar item no Provider: $e");
-      rethrow;
-    }
-  }
-
-  Future<void> removerItem(String codigoBarras) async {
-    if (_mercadoId == null) return;
-    try {
-      await _service.removerItemDoInventario(_mercadoId!, codigoBarras);
+      await _service.removerItemDoMercado(_mercadoId!, produtoId);
+      // Remove da lista local para atualizar a tela
+      _itensMercado.removeWhere((i) => i.produtoId == produtoId);
+      notifyListeners();
     } catch (e) {
       debugPrint("Erro ao remover item no Provider: $e");
       rethrow;

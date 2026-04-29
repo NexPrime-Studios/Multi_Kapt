@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../services/shared/usuario_service.dart';
-import '../../../services/shared/usuario_provider.dart';
+import '../../../services/shared/user_provider.dart';
 import '../../../models/mercado.dart';
 import '../widgets/card_mercado_pesquisa.dart';
 import '../widgets/search_bar_widget.dart';
@@ -39,7 +39,7 @@ class _PesquisaPageState extends State<PesquisaPage> {
   @override
   Widget build(BuildContext context) {
     final cores = Theme.of(context).colorScheme;
-    final p = context.read<UsuarioProvider>();
+    final p = context.read<UserProvider>();
     final cidade = p.usuario?.cidade ?? "Edéia";
     final estado = p.usuario?.estado ?? "GO";
 

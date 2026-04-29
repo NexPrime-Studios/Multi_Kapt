@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/usuario.dart';
-import 'auth_service.dart';
+import 'user_service.dart';
 
-class UsuarioProvider extends ChangeNotifier {
-  final AuthService _authService = AuthService();
+class UserProvider extends ChangeNotifier {
+  final UserService _authService = UserService();
   Usuario? _usuario;
   bool _isMobile = !kIsWeb;
   String _cidadeLocal = "";

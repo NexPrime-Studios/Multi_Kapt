@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../models/pedido.dart';
 import '../../../services/shared/usuario_service.dart';
-import '../../../services/shared/usuario_provider.dart';
+import '../../../services/shared/user_provider.dart';
 import '../widgets/card_pedido_cliente.dart';
 
 class HistoricoPedidosCliente extends StatefulWidget {
@@ -24,7 +24,7 @@ class _HistoricoPedidosClienteState extends State<HistoricoPedidosCliente> {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.watch<UsuarioProvider>();
+    final p = context.watch<UserProvider>();
     final cores = Theme.of(context).colorScheme;
 
     return Scaffold(

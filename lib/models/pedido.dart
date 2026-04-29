@@ -21,7 +21,7 @@ class Pedido {
   final List<Map<String, dynamic>> itens;
   final double total;
   final String formaPagamento;
-  final String taxa;
+  final double taxa;
   final StatusPedido status;
   final DateTime dataCriacao;
   final Map<String, DateTime?> horarios;
@@ -80,7 +80,8 @@ class Pedido {
   }
 
   factory Pedido.fromMap(String id, Map<String, dynamic> map) {
-    Map<String, dynamic> horariosRaw = map['horarios'] ?? {};
+    final Map<String, dynamic> horariosRaw =
+        Map<String, dynamic>.from(map['horarios'] ?? {});
 
     return Pedido(
       idPedido: id,
@@ -97,11 +98,11 @@ class Pedido {
           .toList(),
       total: (map['total'] ?? 0.0).toDouble(),
       formaPagamento: map['forma_pagamento'] ?? 'Não informado',
-      taxa: map['taxa']?.toString() ?? '0.00',
+      taxa: (map['taxa'] ?? 0.0).toDouble(),
       dataCriacao:
           map['data'] != null ? DateTime.parse(map['data']) : DateTime.now(),
       status: StatusPedido.values.firstWhere(
-        (e) => e.name == (map['status'] ?? 'pendente'),
+        (e) => e.name == map['status'],
         orElse: () => StatusPedido.pendente,
       ),
       horarios: horariosRaw.map((key, value) =>
@@ -120,6 +121,9 @@ class Pedido {
     String? nomeColetor,
     String? entregadorId,
     String? nomeEntregador,
+    List<Map<String, dynamic>>? itens,
+    double? total,
+    double? taxa,
   }) {
     return Pedido(
       idPedido: idPedido,
@@ -131,10 +135,10 @@ class Pedido {
       enderecoEntrega: enderecoEntrega,
       latitude: latitude,
       longitude: longitude,
-      itens: itens,
-      total: total,
+      itens: itens ?? this.itens,
+      total: total ?? this.total,
       formaPagamento: formaPagamento,
-      taxa: taxa,
+      taxa: taxa ?? this.taxa,
       dataCriacao: dataCriacao,
       status: status ?? this.status,
       horarios: horarios ?? this.horarios,

@@ -1,45 +1,47 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../models/produto_enums.dart';
 
 class CategoriasProdutoService {
   final _supabase = Supabase.instance.client;
 
-  /// Método que estava faltando: busca o JSON completo da categoria
-  Future<List<dynamic>> fetchDadosCompletosDaCategoria(
-      CategoriaProduto categoria) async {
+  /// Método base que busca os dados brutos do Supabase
+  Future<List<Map<String, dynamic>>> buscarBasesEVariacoes(
+      String categoria) async {
     try {
-      final response = await _supabase
-          .from('categorias_produtos')
-          .select('dados')
-          .eq('nome_categoria', categoria.name)
-          .maybeSingle();
+      final List<dynamic> response = await _supabase.rpc(
+        'get_produtos_base_por_categoria',
+        params: {'p_categoria': categoria},
+      );
 
-      if (response == null || response['dados'] == null) return [];
-
-      return response['dados'] as List<dynamic>;
+      return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      print('Erro ao buscar dados da categoria: $e');
+      print('Erro ao buscar produtos base: $e');
       return [];
     }
   }
 
-  /// Método para salvar novos itens (RPC)
-  Future<void> salvarEstruturaProdutoCompleta({
-    required CategoriaProduto categoria,
-    required String nomeSubcategoria,
-    required String nomeProdutoBase,
-    required List<String> variacoes,
-  }) async {
-    try {
-      await _supabase.rpc('upsert_produto_hierarquico', params: {
-        'p_categoria': categoria.name,
-        'p_subcategoria': nomeSubcategoria,
-        'p_produto': nomeProdutoBase,
-        'p_variacoes': variacoes,
-      });
-    } catch (e) {
-      print('Erro ao salvar estrutura: $e');
-      rethrow;
-    }
+  /// Retorna apenas os nomes únicos dos "produtos base" para a categoria
+  Future<List<String>> buscarApenasBases(String categoria) async {
+    final dados = await buscarBasesEVariacoes(categoria);
+
+    // Extrai o campo 'produto_base', remove nulos e duplicatas
+    return dados
+        .map((item) => item['produto_base'] as String)
+        .toSet() // O Set remove automaticamente duplicatas
+        .toList()
+      ..sort(); // Ordena alfabeticamente
+  }
+
+  /// Retorna as variações disponíveis para um "produto base" específico dentro de uma categoria
+  Future<List<String>> buscarVariacoesPorBase(
+      String categoria, String produtoBase) async {
+    final dados = await buscarBasesEVariacoes(categoria);
+
+    // Filtra apenas os itens que pertencem ao produto base escolhido
+    return dados
+        .where((item) => item['produto_base'] == produtoBase)
+        .map((item) => item['variacao'] as String)
+        .toSet()
+        .toList()
+      ..sort();
   }
 }

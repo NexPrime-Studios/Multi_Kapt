@@ -1,5 +1,5 @@
 // models/produto.dart
-import 'unidade_medida_enums.dart';
+import '../enums/unidade_medida_enums.dart';
 
 enum TipoProduto {
   industrial, // Código de barras fixo e marca (ex: Coca-Cola)
@@ -15,7 +15,6 @@ class Produto {
   final TipoProduto tipo;
 
   final String categoria; // Ex: Carnes, Padaria, Hortifruti
-  final String subcategoria; // Ex: Bovinos, Pães, Frutas
   final String produtoBase; // Ex: Alcatra, Pão de Forma, Banana
   final String? variacao; // Ex: Em bifes, Integral, Nanica
 
@@ -51,7 +50,6 @@ class Produto {
     required this.id,
     required this.tipo,
     required this.categoria,
-    required this.subcategoria,
     required this.produtoBase,
     this.variacao,
     required this.nome,
@@ -86,7 +84,6 @@ class Produto {
         orElse: () => TipoProduto.industrial,
       ),
       categoria: map['categoria'] ?? '',
-      subcategoria: map['subcategoria'] ?? '',
       produtoBase: map['produto_base'] ?? '',
       variacao: map['variacao'],
       nome: map['nome'] ?? '',
@@ -116,7 +113,6 @@ class Produto {
     return {
       'tipo': tipo.name,
       'categoria': categoria,
-      'subcategoria': subcategoria,
       'produto_base': produtoBase,
       'variacao': variacao,
       'nome': nome,

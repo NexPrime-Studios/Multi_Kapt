@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../models/mercado.dart'; // Importe para acessar PagamentosAceitos
-import '../../../../models/produto_enums.dart';
+import '../../../../enums/produto_enums.dart';
 import '../../widgets/campo_formulario.dart';
 
 class EtapaRegras extends StatefulWidget {

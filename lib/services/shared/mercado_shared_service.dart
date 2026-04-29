@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:mercado_app/models/item_mercado.dart';
 import 'package:mercado_app/models/produto.dart';
+import 'package:mercado_app/supabase_keys.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter/foundation.dart';
 import '../../models/mercado.dart';
+import '../../models/pedido.dart';
 
 class MercadoSharedService {
   final _supabase = Supabase.instance.client;
@@ -12,8 +15,11 @@ class MercadoSharedService {
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   Future<Mercado?> buscarMercadoPorId(String id) async {
     try {
-      final response =
-          await _supabase.from('mercados').select().eq('id', id).single();
+      final response = await _supabase
+          .from(SupabaseKeys.tbMercados)
+          .select()
+          .eq('id', id)
+          .single();
 
       return Mercado.fromMap(id, response);
     } catch (e) {
@@ -22,30 +28,18 @@ class MercadoSharedService {
     }
   }
 
-  Stream<Mercado> streamMercado(String id) {
-    return _supabase
-        .from('mercados')
-        .stream(primaryKey: ['id'])
-        .eq('id', id)
-        .map((lista) => Mercado.fromMap(id, lista.first));
-  }
-
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   // MARK: - GESTÃO DE PRODUTOS GLOBAIS
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  Future<void> salvarProdutoGlobal(Produto produto) async {
+  Future<void> criarAtualizarProdutoGlobal(Produto produto) async {
     try {
       final dadosProduto = produto.toMap();
 
-      if (produto.id.isNotEmpty) {
-        await _supabase
-            .from('produtos')
-            .update(dadosProduto)
-            .eq('id', produto.id);
-      } else {
+      if (produto.id.isEmpty) {
         dadosProduto.remove('id');
-        await _supabase.from('produtos').insert(dadosProduto);
       }
+
+      await _supabase.from(SupabaseKeys.tbProdutosGlobal).upsert(dadosProduto);
     } catch (e) {
       debugPrint("Erro ao salvar produto global: $e");
       rethrow;
@@ -55,13 +49,13 @@ class MercadoSharedService {
   Future<Produto?> buscarProdutoGlobal(String codigoBarras) async {
     try {
       final response = await _supabase
-          .from('produtos')
+          .from(SupabaseKeys.tbProdutosGlobal)
           .select()
           .eq('codigo_barras', codigoBarras)
           .maybeSingle();
 
       if (response != null) {
-        return Produto.fromMap(response['id'], response);
+        return Produto.fromMap(response['id'] as String, response);
       }
       return null;
     } catch (e) {
@@ -73,7 +67,7 @@ class MercadoSharedService {
   Future<List<Produto>> buscarProdutosGlobaisPorTermo(String termoBusca) async {
     try {
       final response = await _supabase
-          .from('produtos')
+          .from(SupabaseKeys.tbProdutosGlobal)
           .select()
           .or('codigo_barras.eq.$termoBusca,nome.ilike.%$termoBusca%');
 
@@ -81,19 +75,22 @@ class MercadoSharedService {
           .map((map) => Produto.fromMap(map['id'] as String, map))
           .toList();
     } catch (e) {
-      debugPrint("Erro ao buscar produto global: $e");
+      debugPrint("Erro ao buscar produto por termo: $e");
       return [];
     }
   }
 
-  Future<List<Produto>> listarProdutosGlobais() async {
+  Future<List<Produto>> listarPrimeirosProdutosGlobais() async {
     try {
-      // Busca os primeiros 20 itens da tabela 'produtos' no Supabase
-      final List<dynamic> data =
-          await _supabase.from('produtos').select().limit(20);
+      // Busca os primeiros 20 itens da tabela
+      final response = await _supabase
+          .from(SupabaseKeys.tbProdutosGlobal)
+          .select()
+          .limit(20);
 
-      final produtos =
-          data.map((map) => Produto.fromMap(map['id'], map)).toList();
+      final List<Produto> produtos = (response as List)
+          .map((map) => Produto.fromMap(map['id'] as String, map))
+          .toList();
 
       produtos.shuffle();
       return produtos;
@@ -106,75 +103,85 @@ class MercadoSharedService {
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   // MARK: - GESTÃO DE INVENTÁRIO
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  Future<void> adicionarItemAoInventario(
-      String mercadoId, ItemMercado novoItem) async {
+  Future<void> adicionarAtualizarItemNoMercado(ItemMercado item) async {
     try {
-      final itens = await _getItensDoMercado(mercadoId);
+      await _supabase.from(SupabaseKeys.tbProdutosMercado).upsert(item.toMap());
+    } catch (e) {
+      debugPrint("Erro ao salvar item no mercado: $e");
+      rethrow;
+    }
+  }
 
-      // Evita duplicação por código de barras
-      if (!itens.any((i) => i['codigo_barras'] == novoItem.codigoBarras)) {
-        itens.add(novoItem.toMap());
-        await _updateItens(mercadoId, itens);
+  Future<void> removerItemDoMercado(String mercadoId, String produtoId) async {
+    try {
+      await _supabase
+          .from(SupabaseKeys.tbProdutosMercado)
+          .delete()
+          .eq('mercado_id', mercadoId)
+          .eq('produto_id', produtoId);
+    } catch (e) {
+      debugPrint("Erro ao remover item do mercado: $e");
+      rethrow;
+    }
+  }
+
+  // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  // MARK: - BUSCAR ITEM
+  // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  Future<List<ItemMercado>> listarItensDoMercado(String mercadoId) async {
+    try {
+      final List<dynamic> response = await _supabase
+          .from(SupabaseKeys.tbProdutosMercado)
+          .select()
+          .eq('mercado_id', mercadoId);
+
+      return response.map((map) => ItemMercado.fromMap(map)).toList();
+    } catch (e) {
+      debugPrint("Erro ao listar itens do mercado: $e");
+      return [];
+    }
+  }
+
+  Future<ItemMercado?> buscarItemEspecificoNoMercado(
+      String mercadoId, String produtoId) async {
+    try {
+      final response = await _supabase
+          .from(SupabaseKeys.tbProdutosMercado)
+          .select()
+          .eq('mercado_id', mercadoId)
+          .eq('produto_id', produtoId)
+          .maybeSingle();
+
+      if (response != null) {
+        return ItemMercado.fromMap(response);
       }
+      return null;
     } catch (e) {
-      debugPrint("Erro ao adicionar item: $e");
-      rethrow;
+      debugPrint("Erro ao buscar item específico: $e");
+      return null;
     }
   }
 
-  Future<void> atualizarItemNoInventario(
-      String mercadoId, ItemMercado itemAtualizado) async {
-    try {
-      // Busca a lista atual de itens (geralmente do Firestore ou DB local)
-      final itens = await _getItensDoMercado(mercadoId);
-
-      final novosItens = itens.map((itemMap) {
-        // Se encontrar o código de barras, substitui o mapa inteiro
-        if (itemMap['codigo_barras'] == itemAtualizado.codigoBarras) {
-          return itemAtualizado
-              .toMap(); // Certifique-se de ter o método toMap() no seu Model
-        }
-        return itemMap;
-      }).toList();
-
-      await _updateItens(mercadoId, novosItens);
-    } catch (e) {
-      debugPrint("Erro ao atualizar item no service: $e");
-      rethrow;
-    }
-  }
-
-  Future<void> removerItemDoInventario(
-      String mercadoId, String codigoBarras) async {
-    try {
-      final itens = await _getItensDoMercado(mercadoId);
-
-      itens.removeWhere((item) => item['codigo_barras'] == codigoBarras);
-
-      await _updateItens(mercadoId, itens);
-    } catch (e) {
-      debugPrint("Erro ao remover item: $e");
-      rethrow;
-    }
-  }
-
-  // ----------- METODOS AUXILIARES -----------
-  Future<List<Map<String, dynamic>>> _getItensDoMercado(
-      String mercadoId) async {
-    final res = await _supabase
-        .from('mercados')
-        .select('itens')
-        .eq('id', mercadoId)
-        .single();
-
-    // Converte para List<Map<String, dynamic>> garantindo mutabilidade
-    final List rawList = res['itens'] ?? [];
-    return List<Map<String, dynamic>>.from(rawList);
-  }
-
-  Future<void> _updateItens(String mercadoId, List itens) async {
-    await _supabase
-        .from('mercados')
-        .update({'itens': itens}).eq('id', mercadoId);
+  // ==========================================
+  // GESTÃO DE PEDIDOS
+  // ==========================================
+  Stream<List<Pedido>> buscarPedidosAtivos(String mercadoId) {
+    return _supabase
+        .from(SupabaseKeys.tbViewPedidosAtivos)
+        .stream(primaryKey: ['id'])
+        .eq('mercado_id', mercadoId)
+        .map((data) {
+          return data.map((map) {
+            try {
+              return Pedido.fromMap(map['id'].toString(), map);
+            } catch (e) {
+              debugPrint('Erro de parsing no pedido ${map['id']}: $e');
+              throw FormatException('Erro ao processar dados do pedido');
+            }
+          }).toList();
+        })
+        .handleError((error) {
+          debugPrint('Erro no Stream de Pedidos: $error');
+        });
   }
 }

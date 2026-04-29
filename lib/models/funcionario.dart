@@ -1,55 +1,59 @@
 enum CargoAcesso {
-  dono,
-  gerente,
-  operador,
-  coletor,
-  entregador,
-  coletorEntregador,
+  dono, // Proprietário da conta
+  adm, // Administrador com altos poderes
+  funcionario // Funcionário padrão
 }
 
 extension CargoAcessoExt on CargoAcesso {
   String get label {
     switch (this) {
       case CargoAcesso.dono:
-        return 'Dono / Administrador';
-      case CargoAcesso.gerente:
-        return 'Gerente';
-      case CargoAcesso.operador:
-        return 'Operador de Caixa';
-      case CargoAcesso.coletor:
-        return 'Coletor';
-      case CargoAcesso.entregador:
-        return 'Entregador';
-      case CargoAcesso.coletorEntregador:
-        return 'Coletor e Entregador';
+        return 'Proprietário';
+      case CargoAcesso.adm:
+        return 'Sócio / Administrador';
+      case CargoAcesso.funcionario:
+        return 'Colaborador';
     }
   }
+}
 
-  // --- LOGICA DE PERMISSÕES ---
+class PermissoesFuncionario {
+  final bool podeVerMetricas;
+  final bool podeGerenciarEquipe;
+  final bool podeEditarProdutos;
 
-  /// Define quem pode acessar as métricas financeiras da loja
-  bool get podeVerMetricas =>
-      this == CargoAcesso.dono || this == CargoAcesso.gerente;
+  PermissoesFuncionario({
+    this.podeVerMetricas = false,
+    this.podeGerenciarEquipe = false,
+    this.podeEditarProdutos = false,
+  });
 
-  /// Define quem pode gerenciar a lista de funcionários
-  bool get podeGerenciarEquipe => this == CargoAcesso.dono;
+  factory PermissoesFuncionario.fromMap(Map<String, dynamic> map) {
+    return PermissoesFuncionario(
+      podeVerMetricas: map['pode_ver_metricas'] ?? false,
+      podeGerenciarEquipe: map['pode_gerenciar_equipe'] ?? false,
+      podeEditarProdutos: map['pode_editar_produtos'] ?? false,
+    );
+  }
 
-  /// Define quem pode editar produtos e estoque
-  bool get podeEditarProdutos =>
-      this == CargoAcesso.dono ||
-      this == CargoAcesso.gerente ||
-      this == CargoAcesso.operador ||
-      this == CargoAcesso.coletor;
+  Map<String, dynamic> toMap() {
+    return {
+      'pode_ver_metricas': podeVerMetricas,
+      'pode_gerenciar_equipe': podeGerenciarEquipe,
+      'pode_editar_produtos': podeEditarProdutos,
+    };
+  }
 }
 
 class Funcionario {
   final String id;
+  final String nome;
   final String mercadoId;
   final String? email;
   final String codigoSenha;
-  final String nome;
   final CargoAcesso cargo;
   final bool ativo;
+  final PermissoesFuncionario permissoes;
 
   Funcionario({
     required this.id,
@@ -59,31 +63,45 @@ class Funcionario {
     required this.nome,
     required this.cargo,
     this.ativo = true,
+    required this.permissoes,
   });
 
-  factory Funcionario.fromMap(Map<String, dynamic> map) {
+  factory Funcionario.fromMap(Map<String, dynamic> map, {String? docId}) {
+    final permissoesRaw = map['permissoes'];
+    final permissoesMap = (permissoesRaw is Map)
+        ? Map<String, dynamic>.from(permissoesRaw)
+        : <String, dynamic>{};
+
     return Funcionario(
-      id: map['id']?.toString() ?? '',
+      id: docId ?? map['id']?.toString() ?? '',
       mercadoId: map['mercado_id']?.toString() ?? '',
       email: map['email']?.toString(),
       codigoSenha: map['codigo_id']?.toString() ?? '',
       nome: map['nome']?.toString() ?? 'Sem Nome',
-      cargo: CargoAcesso.values.firstWhere(
-        (e) => e.name == map['funcao'],
-        orElse: () => CargoAcesso.operador,
-      ),
+      cargo: _parseCargo(map['funcao']),
       ativo: map['ativo'] ?? true,
+      permissoes: PermissoesFuncionario.fromMap(permissoesMap),
+    );
+  }
+
+  static CargoAcesso _parseCargo(dynamic value) {
+    if (value == null) return CargoAcesso.funcionario;
+    return CargoAcesso.values.firstWhere(
+      (e) => e.name == value.toString(),
+      orElse: () => CargoAcesso.funcionario,
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
+      'id': id,
       'mercado_id': mercadoId,
       'email': email?.toLowerCase().trim(),
-      'codigo_id': codigoSenha.toUpperCase(),
+      'codigo_id': codigoSenha.toUpperCase().trim(),
       'nome': nome,
       'funcao': cargo.name,
       'ativo': ativo,
+      'permissoes': permissoes.toMap(),
     };
   }
 }

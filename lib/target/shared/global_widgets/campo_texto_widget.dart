@@ -8,10 +8,13 @@ class CampoTextoWidget extends StatelessWidget {
   final TextInputType type;
   final List<TextInputFormatter>? formatters;
   final String? Function(String?)? validator;
-  final int maxLines;
+  final int? maxLines;
   final IconData? icon;
   final bool enabled;
   final TextCapitalization capitalization;
+  final String? helperText;
+  final String? hintText;
+  final VoidCallback? onClear;
 
   const CampoTextoWidget({
     super.key,
@@ -25,6 +28,9 @@ class CampoTextoWidget extends StatelessWidget {
     this.icon,
     this.enabled = true,
     this.capitalization = TextCapitalization.none,
+    this.helperText,
+    this.hintText,
+    this.onClear,
   });
 
   @override
@@ -43,8 +49,17 @@ class CampoTextoWidget extends StatelessWidget {
         enabled: enabled,
         decoration: InputDecoration(
           labelText: label,
+          hintText: hintText,
+          helperText: helperText,
+          helperMaxLines: 2,
           prefixIcon: icon != null
               ? Icon(icon, color: theme.colorScheme.secondary)
+              : null,
+          suffixIcon: onClear != null
+              ? IconButton(
+                  icon: const Icon(Icons.clear, size: 18),
+                  onPressed: onClear,
+                )
               : null,
         ),
         validator: enabled

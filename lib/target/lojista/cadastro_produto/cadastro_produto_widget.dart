@@ -2,14 +2,13 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../models/produto.dart';
-import '../../../../models/produto_enums.dart';
-import '../../../../models/tags_helper.dart';
-import '../../../models/unidade_medida_enums.dart';
+import '../../../enums/produto_enums.dart';
+import '../../../enums/tags_helper.dart';
+import '../../../enums/unidade_medida_enums.dart';
 import '../../../services/lojista/lojista_service.dart';
 import '../../../services/shared/imagem_service.dart';
 import '../widgets/campo_formulario.dart';
 import '../../shared/global_widgets/selecao_imagem_widget.dart';
-import 'menu_escolha_cadastro_widget.dart';
 import 'scanner_desktop_widget.dart';
 
 enum TelaDialog { menu, buscaEdicao, formulario, scanner }
@@ -113,7 +112,6 @@ class _DialogCadastroProdutoState extends State<DialogCadastroProduto> {
         codigoBarras: _barrasController.text.trim(),
         tipo: TipoProduto.industrial,
         categoria: 'teste',
-        subcategoria: idProduto,
         produtoBase: 'teste',
         unidadeMedida: _unidade,
         tags: _tagsSelecionadas,

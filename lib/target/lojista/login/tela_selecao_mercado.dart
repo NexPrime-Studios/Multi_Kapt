@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../services/lojista/lojista_service.dart';
-import '../../../services/shared/auth_service.dart';
-import '../../../services/shared/usuario_provider.dart';
+import '../../../services/shared/user_service.dart';
+import '../../../services/shared/user_provider.dart';
 import '../../../models/funcionario.dart';
 import '../../lojista/login/widgets/card_mercado_vinculo.dart';
 import 'tela_cadastro_mercado.dart';
@@ -20,7 +20,7 @@ class TelaSelecaoMercado extends StatefulWidget {
 
 class _TelaSelecaoMercadoState extends State<TelaSelecaoMercado> {
   final LojistaService _lojistaService = LojistaService();
-  final AuthService _authService = AuthService();
+  final UserService _authService = UserService();
   final _supabase = Supabase.instance.client;
 
   bool _carregando = true;
@@ -33,7 +33,7 @@ class _TelaSelecaoMercadoState extends State<TelaSelecaoMercado> {
   }
 
   Future<void> _inicializarDados() async {
-    final p = context.read<UsuarioProvider>();
+    final p = context.read<UserProvider>();
     if (!p.temPerfil && _supabase.auth.currentUser != null) {
       await p.carregarPerfil();
     }
@@ -57,7 +57,7 @@ class _TelaSelecaoMercadoState extends State<TelaSelecaoMercado> {
   }
 
   Future<void> _fazerLogout() async {
-    context.read<UsuarioProvider>().limparUsuario();
+    context.read<UserProvider>().limparUsuario();
     await _authService.signOut();
     if (mounted) {
       Navigator.pushAndRemoveUntil(
@@ -82,7 +82,7 @@ class _TelaSelecaoMercadoState extends State<TelaSelecaoMercado> {
 
   @override
   Widget build(BuildContext context) {
-    final usuarioProvider = context.watch<UsuarioProvider>();
+    final usuarioProvider = context.watch<UserProvider>();
     final usuario = usuarioProvider.usuario;
 
     // Extrai o primeiro nome do provider

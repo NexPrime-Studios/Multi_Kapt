@@ -1,6 +1,5 @@
-import 'item_mercado.dart';
 import 'horario_mercado.dart';
-import 'produto_enums.dart';
+import '../enums/produto_enums.dart';
 
 enum PagamentosAceitos { dinheiro, cartao, pix, vale }
 
@@ -21,7 +20,6 @@ class Mercado {
   final double pedidoMinimo;
   final String tempoEntrega;
   final bool estaAberto;
-  final List<ItemMercado> itens;
   final Map<String, DiaFuncionamento> gradeHorarios;
   final List<CategoriaProduto> categorias;
   final List<PagamentosAceitos> pagamentosAceitos;
@@ -45,7 +43,6 @@ class Mercado {
     required this.pedidoMinimo,
     required this.tempoEntrega,
     required this.estaAberto,
-    required this.itens,
     required this.gradeHorarios,
     required this.categorias,
     required this.pagamentosAceitos,
@@ -70,7 +67,6 @@ class Mercado {
       'pedido_minimo': pedidoMinimo,
       'tempo_entrega': tempoEntrega,
       'esta_aberto': estaAberto,
-      'itens': itens.map((i) => i.toMap()).toList(), // Coluna JSONB
       'grade_horarios': gradeHorarios.map((k, v) => MapEntry(k, v.toMap())),
       'categorias': categorias.map((c) => c.name).toList(),
       'pagamentos_aceitos': pagamentosAceitos.map((p) => p.name).toList(),
@@ -81,7 +77,7 @@ class Mercado {
 
   factory Mercado.fromMap(String id, Map<String, dynamic> map) {
     return Mercado(
-      id: map['id'] ?? '',
+      id: id,
       adminUid: map['admin_uid'] ?? '',
       nome: map['nome'] ?? '',
       cnpj: map['cnpj'],
@@ -97,18 +93,23 @@ class Mercado {
       pedidoMinimo: (map['pedido_minimo'] ?? 0.0).toDouble(),
       tempoEntrega: map['tempo_entrega'] ?? '',
       estaAberto: map['esta_aberto'] ?? true,
-      itens: (map['itens'] as List? ?? [])
-          .map((item) => ItemMercado.fromMap(item))
-          .toList(),
       gradeHorarios: (map['grade_horarios'] as Map<String, dynamic>? ?? {}).map(
         (key, value) => MapEntry(key, DiaFuncionamento.fromMap(value)),
       ),
-      categorias: (map['categorias'] as List? ?? [])
-          .map((c) => CategoriaProduto.values.byName(c))
-          .toList(),
-      pagamentosAceitos: (map['pagamentos_aceitos'] as List? ?? [])
-          .map((p) => PagamentosAceitos.values.byName(p))
-          .toList(),
+      categorias: (map['categorias'] as List? ?? []).map((c) {
+        try {
+          return CategoriaProduto.values.byName(c);
+        } catch (_) {
+          return CategoriaProduto.outros;
+        }
+      }).toList(),
+      pagamentosAceitos: (map['pagamentos_aceitos'] as List? ?? []).map((p) {
+        try {
+          return PagamentosAceitos.values.byName(p);
+        } catch (_) {
+          return PagamentosAceitos.dinheiro;
+        }
+      }).toList(),
       latitude: (map['latitude'] ?? 0.0).toDouble(),
       longitude: (map['longitude'] ?? 0.0).toDouble(),
     );
@@ -131,7 +132,6 @@ class Mercado {
     double? pedidoMinimo,
     String? tempoEntrega,
     bool? estaAberto,
-    List<ItemMercado>? itens,
     Map<String, DiaFuncionamento>? gradeHorarios,
     List<CategoriaProduto>? categorias,
     List<PagamentosAceitos>? pagamentosAceitos,
@@ -155,7 +155,6 @@ class Mercado {
       pedidoMinimo: pedidoMinimo ?? this.pedidoMinimo,
       tempoEntrega: tempoEntrega ?? this.tempoEntrega,
       estaAberto: estaAberto ?? this.estaAberto,
-      itens: itens ?? this.itens,
       gradeHorarios: gradeHorarios ?? this.gradeHorarios,
       categorias: categorias ?? this.categorias,
       pagamentosAceitos: pagamentosAceitos ?? this.pagamentosAceitos,

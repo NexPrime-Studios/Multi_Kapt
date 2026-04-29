@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../../models/produto_enums.dart';
-import '../../global_widgets/secao_titulo_widget.dart';
+import '../../../../enums/produto_enums.dart';
 import 'dropdown_categoria_widget.dart';
-import 'providers/novo_produto_provider.dart';
 import 'providers/categoria_provider.dart';
 
 class SessaoClassificacaoWidget extends StatelessWidget {
@@ -11,97 +9,70 @@ class SessaoClassificacaoWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final produtoProvider = context.watch<NovoProdutoProvider>();
-    final catProvider = context.watch<CategoriaProvider>();
+    final prov = context.watch<CategoriaProvider>();
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Card(
-      elevation: 1,
+      elevation: 0,
       margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        // Usando outlineVariant para manter o padrão do seu dropdown
+        side: BorderSide(color: colorScheme.outlineVariant.withOpacity(0.5)),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
-            const SecaoTituloWidget(titulo: "Classificação do Produto"),
-            const SizedBox(height: 8),
-            const Text(
-              "Selecione a categoria e os detalhes para organizar seu estoque.",
-              style:
-                  TextStyle(fontSize: 14, color: Colors.black54, height: 1.4),
-            ),
-            const SizedBox(height: 20),
-
-            // 1. DROPDOWN CATEGORIA (BASE ENUM)
-            DropdownCategoriaWidget(
-              value: catProvider.categoriaSelecionada?.label ??
-                  "Selecione uma categoria",
-              temErro: catProvider.categoriaSelecionada == null &&
-                  produtoProvider.tagErro,
-              onChanged: (val) {
-                if (val != null) {
-                  final enumVal = CategoriaProduto.fromLabel(val);
-                  catProvider.setCategoria(enumVal);
-                }
-              },
+            // 1. CATEGORIA
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Categoria",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                const SizedBox(height: 8),
+                DropdownCategoriaWidget(
+                  value: prov.categoriaSelecionada?.label ??
+                      "Selecione uma categoria",
+                  onChanged: (val) {
+                    if (val != null) {
+                      prov.setCategoria(CategoriaProduto.fromLabel(val));
+                    }
+                  },
+                ),
+              ],
             ),
 
-            // 2. SEÇÃO SUBCATEGORIA
-            if (catProvider.categoriaSelecionada != null) ...[
-              const SizedBox(height: 16),
-              if (catProvider.subcategoriaSelecionada != "ADICIONAR_NOVA")
-                _buildDropdownDinamico(
-                  label: "Subcategoria",
-                  value: catProvider.subcategoriaSelecionada,
-                  items: catProvider.listaSubcategorias,
-                  onChanged: (val) => catProvider.setSubcategoria(val),
-                  permitirNovo: true,
-                )
-              else
-                _buildCampoManual(
-                  label: "Nova Subcategoria",
-                  onCancel: () => catProvider.setSubcategoria(null),
-                  onChanged: (val) => catProvider.subcategoriaManual = val,
-                ),
+            // 2. PRODUTO BASE
+            if (prov.categoriaSelecionada != null) ...[
+              const SizedBox(height: 20),
+              _buildCampoSelecao(
+                context,
+                label: "Produto",
+                value: prov.produtoBaseSelecionado,
+                items: prov.listaProdutosBase,
+                isLoading: prov.carregando,
+                onSelect: (val) => prov.setProdutoBase(val),
+                onAdicionarNovo: (novo) => prov.setProdutoBase(novo),
+              ),
             ],
 
-            // 3. SEÇÃO PRODUTO BASE
-            if (catProvider.subcategoriaSelecionada != null) ...[
-              const SizedBox(height: 16),
-              if (catProvider.produtoBaseSelecionado != "ADICIONAR_NOVA")
-                _buildDropdownDinamico(
-                  label: "Produto Base",
-                  value: catProvider.produtoBaseSelecionado,
-                  items: catProvider.listaProdutosBase,
-                  onChanged: (val) => catProvider.setProdutoBase(val),
-                  permitirNovo: true,
-                )
-              else
-                _buildCampoManual(
-                  label: "Novo Produto Base",
-                  onCancel: () => catProvider.setProdutoBase(null),
-                  onChanged: (val) => catProvider.produtoBaseManual = val,
-                ),
-            ],
-
-            // 4. SEÇÃO VARIAÇÃO
-            if (catProvider.produtoBaseSelecionado != null) ...[
-              const SizedBox(height: 16),
-              if (catProvider.variacaoSelecionada != "ADICIONAR_NOVA")
-                _buildDropdownDinamico(
-                  label: "Variação/Sabor/Tamanho",
-                  value: catProvider.variacaoSelecionada,
-                  items: catProvider.listaVariacoes,
-                  onChanged: (val) => catProvider.setVariacao(val),
-                  permitirNovo: true,
-                )
-              else
-                _buildCampoManual(
-                  label: "Nova Variação",
-                  onCancel: () => catProvider.setVariacao(null),
-                  onChanged: (val) => catProvider.variacaoManual = val,
-                ),
+            // 3. VARIAÇÃO
+            if (prov.produtoBaseSelecionado != null) ...[
+              const SizedBox(height: 20),
+              _buildCampoSelecao(
+                context,
+                label: "Variação / Sabor",
+                value: prov.variacaoSelecionada,
+                items: prov.listaVariacoes,
+                isLoading: false,
+                onSelect: (val) => prov.setVariacao(val),
+                onAdicionarNovo: (novo) => prov.setVariacao(novo),
+              ),
             ],
           ],
         ),
@@ -109,53 +80,241 @@ class SessaoClassificacaoWidget extends StatelessWidget {
     );
   }
 
-  // Widget auxiliar para criar os Dropdowns repetitivos
-  Widget _buildDropdownDinamico({
+  Widget _buildCampoSelecao(
+    BuildContext context, {
     required String label,
     required String? value,
     required List<String> items,
-    required ValueChanged<String?> onChanged,
-    bool permitirNovo = false,
+    required bool isLoading,
+    required Function(String) onSelect,
+    required Function(String) onAdicionarNovo,
   }) {
-    return DropdownButtonFormField<String>(
-      value: value,
-      isExpanded: true,
-      decoration: InputDecoration(
-        labelText: label,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      ),
-      items: [
-        ...items.map((e) => DropdownMenuItem(value: e, child: Text(e))),
-        if (permitirNovo)
-          const DropdownMenuItem(
-            value: "ADICIONAR_NOVA",
-            child: Text("+ Outro (Cadastrar Novo)",
-                style:
-                    TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: isLoading
+              ? null
+              : () => _mostrarDialogBusca(
+                  context, label, items, onSelect, onAdicionarNovo),
+          borderRadius: BorderRadius.circular(15),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(color: colorScheme.outlineVariant, width: 1.5),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.03),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                // Ícone usando a cor secundária do tema, como no seu dropdown
+                Icon(Icons.ads_click, size: 20, color: colorScheme.secondary),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    value ?? "Selecionar...",
+                    style: TextStyle(
+                      fontSize: 16,
+                      color:
+                          value == null ? Colors.grey.shade500 : Colors.black87,
+                    ),
+                  ),
+                ),
+                if (isLoading)
+                  SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: colorScheme.primary))
+                else
+                  Icon(Icons.keyboard_arrow_down_rounded,
+                      color: colorScheme.primary),
+              ],
+            ),
           ),
+        ),
       ],
-      onChanged: onChanged,
     );
   }
 
-  Widget _buildCampoManual({
-    required String label,
-    required VoidCallback onCancel,
-    required Function(String) onChanged,
-  }) {
-    return TextFormField(
-      autofocus: true,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: "Digite o nome aqui...",
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        suffixIcon: IconButton(
-          icon: const Icon(Icons.cancel, color: Colors.red),
-          onPressed: onCancel,
+  void _mostrarDialogBusca(
+      BuildContext context,
+      String titulo,
+      List<String> items,
+      Function(String) onSelect,
+      Function(String) onAdicionarNovo) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        String filtro = "";
+        return StatefulBuilder(builder: (context, setState) {
+          final filtrados = items
+              .where((i) => i.toLowerCase().contains(filtro.toLowerCase()))
+              .toList();
+
+          return Dialog(
+            backgroundColor: Colors.grey[50],
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              constraints: const BoxConstraints(maxHeight: 550),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text("Selecionar $titulo",
+                      style: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+                  TextField(
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      hintText: "Procurar...",
+                      prefixIcon:
+                          Icon(Icons.search, color: colorScheme.primary),
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide:
+                            BorderSide(color: colorScheme.outlineVariant),
+                      ),
+                    ),
+                    onChanged: (val) => setState(() => filtro = val),
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: Card(
+                      elevation: 2,
+                      shadowColor: Colors.black12,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16)),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: ListView(
+                          shrinkWrap: true,
+                          children: [
+                            ListTile(
+                              tileColor:
+                                  colorScheme.primaryContainer.withOpacity(0.3),
+                              leading: CircleAvatar(
+                                radius: 15,
+                                backgroundColor: colorScheme.primary,
+                                child: const Icon(Icons.add,
+                                    color: Colors.white, size: 18),
+                              ),
+                              title: Text("Cadastrar novo",
+                                  style: TextStyle(
+                                      color: colorScheme.primary,
+                                      fontWeight: FontWeight.bold)),
+                              onTap: () {
+                                Navigator.pop(context);
+                                _mostrarDialogNovo(
+                                    context, titulo, onAdicionarNovo);
+                              },
+                            ),
+                            const Divider(height: 1),
+                            ...filtrados.map((item) => Column(
+                                  children: [
+                                    ListTile(
+                                      title: Text(item),
+                                      trailing: Icon(Icons.chevron_right,
+                                          size: 18, color: colorScheme.outline),
+                                      onTap: () {
+                                        onSelect(item);
+                                        Navigator.pop(context);
+                                      },
+                                    ),
+                                    const Divider(
+                                        height: 1, indent: 16, endIndent: 16),
+                                  ],
+                                )),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        });
+      },
+    );
+  }
+
+  void _mostrarDialogNovo(
+      BuildContext context, String titulo, Function(String) onConfirmar) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final controller = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text("Novo $titulo",
+                  style: const TextStyle(
+                      fontSize: 20, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 24),
+              TextField(
+                controller: controller,
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: "Nome do item",
+                  labelStyle: TextStyle(color: colorScheme.primary),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide:
+                        BorderSide(color: colorScheme.primary, width: 2),
+                  ),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: colorScheme.onPrimary,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () {
+                    if (controller.text.trim().isNotEmpty) {
+                      onConfirmar(controller.text.trim());
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: const Text("SALVAR ITEM",
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-      onChanged: onChanged,
     );
   }
 }

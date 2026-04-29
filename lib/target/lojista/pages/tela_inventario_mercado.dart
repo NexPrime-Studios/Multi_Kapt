@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:mercado_app/target/shared/gerenciar_produtos/cadastrar_produto_global/criar_novo_produto_page.dart';
 import 'package:provider/provider.dart';
 import '../../../services/lojista/lojista_provider.dart';
 import '../../../models/item_mercado.dart';
 import '../widgets/seletor_produtos_globais.dart';
-import '../cadastro_produto/cadastro_produto_widget.dart';
 import '../widgets/card_item_inventario.dart';
 
 class TelaInventarioMercado extends StatefulWidget {
@@ -95,7 +95,7 @@ class _TelaInventarioMercadoState extends State<TelaInventarioMercado> {
         onPressed: () => showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (context) => const DialogCadastroProduto(),
+          builder: (context) => const CriarNovoProdutoPage(),
         ),
         icon: const Icon(Icons.add),
         label: const Text("Novo Produto Global"),

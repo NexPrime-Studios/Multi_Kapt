@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../models/mercado.dart';
 import '../../../services/shared/usuario_service.dart';
-import '../../../services/shared/usuario_provider.dart';
+import '../../../services/shared/user_provider.dart';
 import '../widgets/card_mercado_pesquisa.dart';
 import '../widgets/search_bar_widget.dart';
 import '../widgets/seletor_localizacao_widget.dart';
@@ -30,7 +30,7 @@ class _HomePageClienteState extends State<HomePageCliente> {
   }
 
   void _verificarLocalizacaoObrigatoria() {
-    final clienteProv = context.read<UsuarioProvider>();
+    final clienteProv = context.read<UserProvider>();
     if (!clienteProv.temLocalizacao) {
       _mostrarPopupSelecaoCidade();
     }
@@ -73,8 +73,8 @@ class _HomePageClienteState extends State<HomePageCliente> {
   @override
   Widget build(BuildContext context) {
     final ColorScheme cores = Theme.of(context).colorScheme;
-    final cliente = context.watch<UsuarioProvider>().usuario;
-    final localizacaoProv = context.watch<UsuarioProvider>();
+    final cliente = context.watch<UserProvider>().usuario;
+    final localizacaoProv = context.watch<UserProvider>();
 
     final String cidade = cliente?.cidade ?? localizacaoProv.cidade;
     final String estado = cliente?.estado ?? localizacaoProv.estado;

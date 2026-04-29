@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../models/unidade_medida_enums.dart';
+import '../../../enums/unidade_medida_enums.dart';
 
 class DropdownUnidadeWidget extends StatelessWidget {
   final UnidadeMedida value;

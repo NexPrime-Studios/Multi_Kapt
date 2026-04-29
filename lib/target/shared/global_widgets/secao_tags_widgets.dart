@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../models/produto_enums.dart';
-import '../../../../models/tags_helper.dart';
+import '../../../enums/produto_enums.dart';
+import '../../../enums/tags_helper.dart';
 
 class SecaoTagsWidget extends StatelessWidget {
   final CategoriaProduto categoria;
@@ -21,8 +21,6 @@ class SecaoTagsWidget extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    // IMPORTANTE: Buscamos no mapa usando o 'label' da categoria,
-    // que é o que corresponde às chaves do seu TagsHelper (ex: 'Mercearia Doce')
     final sugestoes = TagsHelper.sugestoesPorCategoria[categoria.label] ?? [];
 
     return Card(
@@ -41,11 +39,12 @@ class SecaoTagsWidget extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.sell_outlined, size: 20, color: colorScheme.primary),
+                Icon(Icons.sell_outlined, size: 18, color: colorScheme.primary),
                 const SizedBox(width: 8),
                 Text(
                   "Tags: ${categoria.label}",
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 15),
                 ),
               ],
             ),
@@ -56,25 +55,43 @@ class SecaoTagsWidget extends StatelessWidget {
                 child: Text(
                   "Selecione uma categoria válida para ver as sugestões.",
                   style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 11,
                       color: Colors.grey,
                       fontStyle: FontStyle.italic),
                 ),
               )
             else
               Wrap(
-                spacing: 8,
-                runSpacing: 8,
+                spacing: 6,
+                runSpacing: 4,
                 children: sugestoes.map((tag) {
                   final isSelected = tagsSelecionadas.contains(tag);
                   return FilterChip(
+                    // --- AJUSTES DE TAMANHO ---
                     label: Text(tag),
+                    labelStyle: TextStyle(
+                      fontSize: 12, // Fonte menor (padrão é ~14)
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.normal,
+                      color: isSelected
+                          ? colorScheme.onSecondaryContainer
+                          : colorScheme.onSurface,
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 4, vertical: 2), // Espaço interno menor
+                    visualDensity: VisualDensity
+                        .compact, // Compacta o widget vertical e horizontalmente
+                    materialTapTargetSize: MaterialTapTargetSize
+                        .shrinkWrap, // Remove o padding extra de toque (48dp)
+                    // --------------------------
                     selected: isSelected,
                     onSelected: (selected) => onTagChanged(tag, selected),
                     selectedColor: colorScheme.secondaryContainer,
                     checkmarkColor: colorScheme.onSecondaryContainer,
+                    showCheckmark:
+                        false, // Opcional: remover o ícone de check ganha mais espaço
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(6),
                     ),
                   );
                 }).toList(),
@@ -84,7 +101,7 @@ class SecaoTagsWidget extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(
                   "Selecione ao menos uma tag informativa",
-                  style: TextStyle(color: colorScheme.error, fontSize: 12),
+                  style: TextStyle(color: colorScheme.error, fontSize: 11),
                 ),
               ),
           ],

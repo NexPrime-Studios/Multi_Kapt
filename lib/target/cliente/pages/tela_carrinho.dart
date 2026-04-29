@@ -4,7 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../services/cliente/carrinho_service.dart';
 import '../../../models/carrinho_item.dart';
 import '../../../services/shared/usuario_service.dart';
-import '../../../services/shared/usuario_provider.dart';
+import '../../../services/shared/user_provider.dart';
 import '../widgets/secao_mercado_carrinho.dart';
 import '../../shared/pages/login_page.dart';
 
@@ -193,7 +193,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
   }
 
   Future<void> _finalizar(CarrinhoService carrinho) async {
-    final clienteProvider = context.read<UsuarioProvider>();
+    final clienteProvider = context.read<UserProvider>();
 
     if (_supabase.auth.currentUser == null) {
       Navigator.push(

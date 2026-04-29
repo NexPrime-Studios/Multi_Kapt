@@ -1,117 +1,103 @@
 import 'package:flutter/material.dart';
-import '../../../../../models/produto_enums.dart';
+import '../../../../../enums/produto_enums.dart';
 import '../../../../../services/shared/categorias_produto_service.dart';
 
 class CategoriaProvider extends ChangeNotifier {
   final _service = CategoriasProdutoService();
 
-  List<dynamic> _cacheDadosCategoria = [];
+  // Estado da Seleção
+  CategoriaProduto? _categoriaSelecionada;
+  String? _produtoBaseSelecionado;
+  String? _variacaoSelecionada;
 
-  CategoriaProduto? categoriaSelecionada;
-  String? subcategoriaSelecionada;
-  String? produtoBaseSelecionado;
-  String? variacaoSelecionada;
+  // Listas de Dados
+  List<Map<String, dynamic>> _dadosBrutos = []; // Armazena o par base/variação
+  List<String> _listaProdutosBase = [];
+  List<String> _listaVariacoes = [];
 
-  // Variáveis para armazenar texto manual (caso não exista no banco)
-  String subcategoriaManual = "";
-  String produtoBaseManual = "";
-  String variacaoManual = "";
+  // Controle de UI
+  bool _carregando = false;
 
-  List<String> listaSubcategorias = [];
-  List<String> listaProdutosBase = [];
-  List<String> listaVariacoes = [];
+  // Controllers para novos cadastros (se decidir voltar com a lógica manual)
+  final produtoBaseManualController = TextEditingController();
+  final variacaoManualController = TextEditingController();
 
-  bool carregandoSub = false;
+  // Getters
+  CategoriaProduto? get categoriaSelecionada => _categoriaSelecionada;
+  String? get produtoBaseSelecionado => _produtoBaseSelecionado;
+  String? get variacaoSelecionada => _variacaoSelecionada;
+  List<String> get listaProdutosBase => _listaProdutosBase;
+  List<String> get listaVariacoes => _listaVariacoes;
+  bool get carregando => _carregando;
 
-  Future<void> setCategoria(CategoriaProduto? categoria) async {
-    if (categoria == categoriaSelecionada) return;
+  /// 1. Seleciona a Categoria e busca no Supabase
+  Future<void> setCategoria(CategoriaProduto? cat) async {
+    _categoriaSelecionada = cat;
+    _produtoBaseSelecionado = null;
+    _variacaoSelecionada = null;
+    _listaProdutosBase = [];
+    _listaVariacoes = [];
 
-    categoriaSelecionada = categoria;
-    _resetarNiveisAbaixo(resetaSub: true);
-
-    if (categoria != null) {
-      carregandoSub = true;
+    if (cat != null) {
+      _carregando = true;
       notifyListeners();
 
-      _cacheDadosCategoria =
-          await _service.fetchDadosCompletosDaCategoria(categoria);
+      // Busca todos os dados daquela categoria de uma vez só para economizar requisições
+      _dadosBrutos = await _service.buscarBasesEVariacoes(cat.label);
 
-      listaSubcategorias = _cacheDadosCategoria
-          .map((e) => e['subcategoria'].toString())
-          .toList();
+      // Extrai apenas as bases únicas para o primeiro dropdown
+      _listaProdutosBase = _dadosBrutos
+          .map((e) => e['produto_base'] as String)
+          .toSet()
+          .toList()
+        ..sort();
 
-      carregandoSub = false;
+      _carregando = false;
     }
     notifyListeners();
   }
 
-  void setSubcategoria(String? subNome) {
-    subcategoriaSelecionada = subNome;
-    subcategoriaManual = "";
-    _resetarNiveisAbaixo(resetaProd: true);
+  /// 2. Seleciona o Produto Base e filtra as variações localmente
+  void setProdutoBase(String? base) {
+    _produtoBaseSelecionado = base;
+    _variacaoSelecionada = null;
+    _listaVariacoes = [];
 
-    if (subNome != null && subNome != "ADICIONAR_NOVA") {
-      final dadosSub = _cacheDadosCategoria.firstWhere(
-        (e) => e['subcategoria'] == subNome,
-        orElse: () => null,
-      );
-
-      if (dadosSub != null) {
-        final List itens = dadosSub['itens'] ?? [];
-        listaProdutosBase =
-            itens.map((i) => i['produtoBase'].toString()).toList();
-      }
+    if (base != null) {
+      // Filtra os dados que já temos em memória
+      _listaVariacoes = _dadosBrutos
+          .where((e) => e['produto_base'] == base)
+          .map((e) => e['variacao'] as String)
+          .toSet()
+          .toList()
+        ..sort();
     }
     notifyListeners();
   }
 
-  void setProdutoBase(String? prodNome) {
-    produtoBaseSelecionado = prodNome;
-    produtoBaseManual = "";
-    _resetarNiveisAbaixo(resetaVar: true);
-
-    if (prodNome != null && prodNome != "ADICIONAR_NOVA") {
-      final dadosSub = _cacheDadosCategoria.firstWhere(
-        (e) => e['subcategoria'] == subcategoriaSelecionada,
-      );
-
-      final List itens = dadosSub['itens'] ?? [];
-      final item = itens.firstWhere(
-        (i) => i['produtoBase'] == prodNome,
-        orElse: () => null,
-      );
-
-      if (item != null) {
-        listaVariacoes = List<String>.from(item['variacoes'] ?? []);
-      }
-    }
+  /// 3. Seleciona a Variação Final
+  void setVariacao(String? variacao) {
+    _variacaoSelecionada = variacao;
     notifyListeners();
   }
 
-  void setVariacao(String? valor) {
-    variacaoSelecionada = valor;
-    if (valor != "ADICIONAR_NOVA") variacaoManual = "";
+  /// Limpa todo o formulário
+  void resetar() {
+    _categoriaSelecionada = null;
+    _produtoBaseSelecionado = null;
+    _variacaoSelecionada = null;
+    _dadosBrutos = [];
+    _listaProdutosBase = [];
+    _listaVariacoes = [];
+    produtoBaseManualController.clear();
+    variacaoManualController.clear();
     notifyListeners();
   }
 
-  void _resetarNiveisAbaixo(
-      {bool resetaSub = false,
-      bool resetaProd = false,
-      bool resetaVar = false}) {
-    if (resetaSub) {
-      subcategoriaSelecionada = null;
-      subcategoriaManual = "";
-      listaSubcategorias = [];
-    }
-    if (resetaSub || resetaProd) {
-      produtoBaseSelecionado = null;
-      produtoBaseManual = "";
-      listaProdutosBase = [];
-    }
-    if (resetaSub || resetaProd || resetaVar) {
-      variacaoSelecionada = null;
-      variacaoManual = "";
-      listaVariacoes = [];
-    }
+  @override
+  void dispose() {
+    produtoBaseManualController.dispose();
+    variacaoManualController.dispose();
+    super.dispose();
   }
 }

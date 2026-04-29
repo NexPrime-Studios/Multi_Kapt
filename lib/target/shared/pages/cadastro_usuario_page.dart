@@ -9,8 +9,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../cliente/pages/main_navigation.dart';
 import '../../lojista/login/tela_selecao_mercado.dart';
 import '../../../models/usuario.dart';
-import '../../../services/shared/usuario_provider.dart';
-import '../../../services/shared/auth_service.dart';
+import '../../../services/shared/user_provider.dart';
+import '../../../services/shared/user_service.dart';
 
 // Componentes de UI
 import '../global_widgets/botao_selecionar_localizacao_widget.dart';
@@ -29,7 +29,7 @@ class CadastroUsuario extends StatefulWidget {
 }
 
 class _CadastroUsuarioState extends State<CadastroUsuario> {
-  final _authService = AuthService();
+  final _authService = UserService();
   final _formKey = GlobalKey<FormState>();
   bool _loading = false;
   bool _semNumero = false; // Controle do "Sem Número"
@@ -111,9 +111,7 @@ class _CadastroUsuarioState extends State<CadastroUsuario> {
           longitude: _lng,
         );
 
-        await context
-            .read<UsuarioProvider>()
-            .salvarEAtualizarPerfil(novoUsuario);
+        await context.read<UserProvider>().salvarEAtualizarPerfil(novoUsuario);
 
         if (mounted) {
           _mostrarSucesso("Cadastro realizado com sucesso!");

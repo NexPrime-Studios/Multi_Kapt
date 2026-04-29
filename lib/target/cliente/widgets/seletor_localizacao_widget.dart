@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../../../services/shared/usuario_provider.dart';
+import '../../../services/shared/user_provider.dart';
 
 class SeletorLocalizacaoWidget extends StatefulWidget {
   const SeletorLocalizacaoWidget({super.key});
@@ -44,7 +44,7 @@ class _SeletorLocalizacaoWidgetState extends State<SeletorLocalizacaoWidget> {
 
       if (!mounted) return;
 
-      final provider = context.read<UsuarioProvider>();
+      final provider = context.read<UserProvider>();
       final cliente = provider.usuario;
 
       // Carrega os dados existentes (prioriza o objeto cliente, depois o provider)
@@ -74,7 +74,7 @@ class _SeletorLocalizacaoWidgetState extends State<SeletorLocalizacaoWidget> {
   }
 
   void _atualizarLocalizacaoLocal() {
-    final provider = context.read<UsuarioProvider>();
+    final provider = context.read<UserProvider>();
     final clienteAtual = provider.usuario;
 
     final novaCidade = _cidadeController.text;

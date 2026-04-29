@@ -3,13 +3,13 @@ import 'package:provider/provider.dart';
 import 'package:mercado_app/app_theme.dart';
 import 'package:mercado_app/target/lojista/login/tela_selecao_mercado.dart';
 // Importe apenas os Providers necessários para o Lojista
-import 'package:mercado_app/services/shared/usuario_provider.dart';
+import 'package:mercado_app/services/shared/user_provider.dart';
 
 void main() {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => UsuarioProvider()),
+        ChangeNotifierProvider(create: (_) => UserProvider()),
       ],
       child: const MercadoAppWeb(),
     ),

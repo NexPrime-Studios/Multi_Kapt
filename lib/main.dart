@@ -17,8 +17,7 @@ import 'package:mercado_app/target/cliente/pages/main_navigation.dart';
 import 'package:mercado_app/target/shared/pages/login_page.dart';
 import 'package:mercado_app/target/funcionario/pages/tela_selecao_modo.dart';
 
-import 'package:mercado_app/services/shared/usuario_provider.dart';
-import 'package:mercado_app/services/lojista/lojista_provider.dart';
+import 'package:mercado_app/services/shared/user_provider.dart';
 import 'package:mercado_app/services/funcionario/funcionario_provider.dart';
 
 import 'app_theme.dart';
@@ -26,17 +25,15 @@ import 'app_theme.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 1. INICIALIZAÇÃO DO SUPABASE
-  await Supabase.initialize(
-    url: 'https://porhtwwbqpljzwukxotu.supabase.co',
-    anonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvcmh0d3dicXBsanp3dWt4b3R1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjMyOTIsImV4cCI6MjA5MjEzOTI5Mn0.BE5ZID-JSqqyp4xv2CEIgSb4ZyuiubuhzaU1J4SoDng',
-  );
-
-  // Carrega o seu arquivo de chaves (IA)
   await dotenv.load(fileName: "chaves.env");
 
-  final usuarioProvider = UsuarioProvider();
+  // 1. INICIALIZAÇÃO DO SUPABASE
+  await Supabase.initialize(
+    url: dotenv.get('SUPABASE_URL'),
+    anonKey: dotenv.get('SUPABASE_ANON_KEY'),
+  );
+
+  final usuarioProvider = UserProvider();
   await usuarioProvider.inicializar();
 
   // 2. VERIFICAÇÃO LOCAL INSTANTÂNEA (Persistência do Funcionário)
@@ -54,14 +51,6 @@ void main() async {
         ChangeNotifierProvider(create: (_) => CarrinhoService()),
         ChangeNotifierProvider.value(value: usuarioProvider),
         ChangeNotifierProvider(create: (_) => MercadoSharedProvider()),
-        ChangeNotifierProxyProvider<MercadoSharedProvider, LojistaProvider>(
-          create: (context) => LojistaProvider(
-            mercadoSharedProvider:
-                Provider.of<MercadoSharedProvider>(context, listen: false),
-          ),
-          update: (context, mercadoShared, lojista) =>
-              lojista!..mercadoSharedProvider = mercadoShared,
-        ),
         ChangeNotifierProxyProvider<MercadoSharedProvider, FuncionarioProvider>(
           create: (context) => FuncionarioProvider(
             isFuncionario: ehFuncionarioPersistido,
@@ -136,7 +125,7 @@ class PlatformSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final funcProv = context.watch<FuncionarioProvider>();
-    final usuarioProv = context.read<UsuarioProvider>();
+    final usuarioProv = context.read<UserProvider>();
 
     // 1. Identifica se é Web/Desktop (PC)
     final bool ehPC =

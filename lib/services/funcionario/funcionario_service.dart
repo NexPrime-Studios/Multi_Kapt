@@ -224,21 +224,6 @@ class FuncionarioService {
     }
   }
 
-  Future<String?> buscarNomeSeProdutoExiste(String codigo) async {
-    try {
-      final response = await _supabase
-          .from('produtos')
-          .select('nome')
-          .eq('codigo_barras', codigo)
-          .maybeSingle();
-
-      return response?['nome'] as String?; // Retorna o nome ou null
-    } catch (e) {
-      debugPrint("Erro ao verificar existência do produto: $e");
-      return null;
-    }
-  }
-
   Future<List<Produto>> buscarProdutosGlobais({String termo = ""}) async {
     try {
       var query = _supabase.from('produtos').select();

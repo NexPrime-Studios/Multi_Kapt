@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 
 // Modelos e Providers
 import '../../../models/usuario.dart';
-import '../../../services/shared/usuario_provider.dart';
+import '../../../services/shared/user_provider.dart';
 import '../../../services/funcionario/funcionario_provider.dart';
 
 // Navegação
@@ -48,7 +48,7 @@ class _PerfilPageClienteState extends State<PerfilPageCliente> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final p = context.read<UsuarioProvider>();
+      final p = context.read<UserProvider>();
       if (!p.temPerfil && _supabase.auth.currentUser != null) {
         p.carregarPerfil();
       }
@@ -125,7 +125,7 @@ class _PerfilPageClienteState extends State<PerfilPageCliente> {
       );
 
       await context
-          .read<UsuarioProvider>()
+          .read<UserProvider>()
           .salvarEAtualizarPerfil(usuarioAtualizado);
 
       _mostrarMensagem("Perfil atualizado com sucesso!", Colors.green);
@@ -147,7 +147,7 @@ class _PerfilPageClienteState extends State<PerfilPageCliente> {
   Widget build(BuildContext context) {
     final user = _supabase.auth.currentUser;
     final cores = Theme.of(context).colorScheme;
-    final clienteProvider = context.watch<UsuarioProvider>();
+    final clienteProvider = context.watch<UserProvider>();
     final usuario = clienteProvider.usuario;
     final funcionarioProvider = context.watch<FuncionarioProvider>();
 
@@ -379,7 +379,7 @@ class _PerfilPageClienteState extends State<PerfilPageCliente> {
         const SizedBox(height: 16),
         TextButton.icon(
           onPressed: () async {
-            context.read<UsuarioProvider>().limparUsuario();
+            context.read<UserProvider>().limparUsuario();
             await context.read<FuncionarioProvider>().desvincular();
             await _supabase.auth.signOut();
           },

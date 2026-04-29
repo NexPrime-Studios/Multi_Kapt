@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../models/mercado.dart';
 import '../../../models/produto.dart';
-import '../../../models/produto_enums.dart';
+import '../../../enums/produto_enums.dart';
 import '../../../services/shared/usuario_service.dart';
 import '../widgets/mercado_widgets/card_produto_mercado.dart';
 import '../widgets/botao_carrinho_flutuante.dart';

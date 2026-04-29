@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 // Services e Providers
-import '../../../services/shared/auth_service.dart';
-import '../../../services/shared/usuario_provider.dart';
+import '../../../services/shared/user_service.dart';
+import '../../../services/shared/user_provider.dart';
 
 // Importe seus widgets globais aqui (ajuste o caminho se necessário)
 import '../../shared/global_widgets/campo_texto_widget.dart';
@@ -24,7 +24,7 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _authService = AuthService();
+  final _authService = UserService();
   final _emailController = TextEditingController();
   final _senhaController = TextEditingController();
   final _formKey = GlobalKey<FormState>(); // Adicionado para validação
@@ -36,7 +36,7 @@ class _LoginPageState extends State<LoginPage> {
 
     final email = _emailController.text.trim();
     final senha = _senhaController.text.trim();
-    final userProvider = context.read<UsuarioProvider>();
+    final userProvider = context.read<UserProvider>();
 
     setState(() => _loading = true);
 
@@ -80,7 +80,7 @@ class _LoginPageState extends State<LoginPage> {
         content: Text(mensagem),
         backgroundColor: Colors.redAccent,
         behavior: SnackBarBehavior.floating,
-        width: context.read<UsuarioProvider>().isPC ? 400 : null,
+        width: context.read<UserProvider>().isPC ? 400 : null,
       ),
     );
   }
@@ -95,7 +95,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final cores = Theme.of(context).colorScheme;
-    final isPC = context.watch<UsuarioProvider>().isPC;
+    final isPC = context.watch<UserProvider>().isPC;
 
     return Scaffold(
       backgroundColor: isPC ? cores.primary : Colors.white,

@@ -1,211 +1,152 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import '../../../../../models/produto.dart';
-import '../../../../../models/unidade_medida_enums.dart';
+import '../../../../../enums/unidade_medida_enums.dart';
 import '../../../../../services/shared/imagem_service.dart';
 import '../../../../../services/shared/mercado_shared_provider.dart';
-import '../../../../funcionario/novo_produto_global/buscar_dados_ia_produto.dart';
-import '../buscar_imagem_produto.dart';
-import '../../../../funcionario/novo_produto_global/buscar_nome_produto.dart';
+import '../../../../../services/shared/open_router_service.dart';
+import 'categoria_provider.dart';
 
 class NovoProdutoProvider extends ChangeNotifier {
   final _mercadoService = MercadoSharedProvider();
   final _imagemService = ImagemService();
-  final _buscarDadosIA = BuscarDadosIAProduto();
-  final _buscarNomeWeb = BuscarNomeProduto();
 
-  // Controllers
   final nomeController = TextEditingController();
   final descricaoController = TextEditingController();
-  final classeController = TextEditingController();
-  final subclasseController = TextEditingController();
-  final produtoBaseController = TextEditingController();
-  final variacaoController = TextEditingController();
-  final ncmController = TextEditingController();
   final codigoBarrasController = TextEditingController();
   final marcaController = TextEditingController();
+  final ncmController = TextEditingController();
   final quantidadeConteudoController = TextEditingController(text: "1");
   final pesoEstimadoController = TextEditingController();
 
-  // Estados
+  // Estados de Dados
   TipoProduto tipoSelecionado = TipoProduto.industrial;
-  String categoriaSelecionada = "Selecione uma categoria";
   UnidadeMedida unidadeMedida = UnidadeMedida.unidade;
   List<String> tagsSelecionadas = [];
   Uint8List? imagemBytes;
   bool semImagem = false;
 
-  // Características
+  // Características (Booleanos editáveis diretamente)
   bool isVegano = false;
   bool isSemGluten = false;
   bool isPerecivel = false;
   bool isSemAcucar = false;
   bool isZeroLactose = false;
 
-  // Estados de UI e Validação
+  // Estados de UI
   bool estaSalvando = false;
+  bool carregandoIA = false;
   bool tagErro = false;
-  bool imagemErro = false;
+
+  Future<void> inicializarBuscaIA(String ean) async {
+    if (tipoSelecionado != TipoProduto.industrial || ean.isEmpty) return;
+
+    carregandoIA = true;
+    notifyListeners();
+
+    try {
+      final service = OpenRouterService();
+      final produto = await service.buscarProdutoPorEan(ean);
+
+      if (produto != null) {
+        nomeController.text = produto.nome;
+        descricaoController.text = produto.descricao;
+        marcaController.text = produto.marca.toUpperCase();
+        ncmController.text = produto.ncm;
+      }
+    } catch (e) {
+      debugPrint("Erro ao buscar dados na IA: $e");
+    } finally {
+      carregandoIA = false;
+      notifyListeners();
+    }
+  }
 
   void updateEstado(VoidCallback acao) {
     acao();
     notifyListeners();
   }
 
-  Future<void> processarBuscaImagem(BuildContext context,
-      {String? nomeManual}) async {
-    if (semImagem) return;
-
-    if (tipoSelecionado == TipoProduto.interno) {
-      await selecionarImagemLocal(context); // Implementar usando ImagePicker
-      return;
-    }
-
-    estaSalvando = true;
-    notifyListeners();
-
-    try {
-      String termoPesquisa;
-      if (tipoSelecionado == TipoProduto.industrial) {
-        termoPesquisa = codigoBarrasController.text;
-      } else {
-        termoPesquisa = nomeManual ?? nomeController.text;
-      }
-
-      if (termoPesquisa.isEmpty) {
-        mostrarAlerta(
-            context, "Informe o código ou nome para buscar a imagem.");
-        return;
-      }
-
-      final Uint8List? imagem = await BuscarImagemProduto().buscarProduto(
-        context,
-        termoPesquisa,
-        tipoSelecionado == TipoProduto.industrial,
-      );
-
-      if (imagem != null) {
-        imagemBytes = imagem;
-        semImagem = false;
-        imagemErro = false;
-      }
-    } catch (e) {
-      imagemErro = true;
-      mostrarAlerta(context, "Erro ao buscar imagem: $e");
-    } finally {
-      estaSalvando = false;
-      notifyListeners();
-    }
-  }
-
   Future<void> selecionarImagemLocal(BuildContext context) async {
     final ImagePicker picker = ImagePicker();
-    final XFile? photo = await picker.pickImage(source: ImageSource.gallery);
-    if (photo != null) {
-      imagemBytes = await photo.readAsBytes();
-      notifyListeners();
-    }
-    print("Abrir seletor de galeria");
-  }
+    ImageSource? source;
 
-  Future<void> buscarNomeIA(BuildContext context) async {
-    final nome = await _buscarDadosIA.selecionarDado(
-        context, codigoBarrasController.text, true);
-    if (nome != null) {
-      nomeController.text = nome;
-      notifyListeners();
+    if (tipoSelecionado == TipoProduto.interno) {
+      source = await showModalBottomSheet<ImageSource>(
+        context: context,
+        builder: (context) => SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_camera),
+                title: const Text('Tirar Foto'),
+                onTap: () => Navigator.pop(context, ImageSource.camera),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Escolher da Galeria'),
+                onTap: () => Navigator.pop(context, ImageSource.gallery),
+              ),
+            ],
+          ),
+        ),
+      );
+    } else {
+      source = ImageSource.gallery;
     }
-  }
 
-  Future<void> buscarNomeWeb(BuildContext context) async {
-    final nome =
-        await _buscarNomeWeb.buscarNome(context, codigoBarrasController.text);
-    if (nome != null) {
-      nomeController.text = nome;
-      notifyListeners();
-    }
-  }
-
-  Future<void> buscarDescricaoIA(BuildContext context) async {
-    final desc = await _buscarDadosIA.selecionarDado(
-        context, codigoBarrasController.text, false);
-    if (desc != null) {
-      descricaoController.text = desc;
-      notifyListeners();
-    }
-  }
-
-  void setCategoria(String? valor) {
-    if (valor != null) {
-      categoriaSelecionada = valor;
-      classeController.text = (valor == "Selecione uma categoria") ? "" : valor;
-      tagsSelecionadas.clear();
-      tagErro = false;
-      notifyListeners();
+    if (source != null) {
+      final photo = await picker.pickImage(source: source);
+      if (photo != null) {
+        imagemBytes = await photo.readAsBytes();
+        notifyListeners();
+      }
     }
   }
 
-  void mostrarAlerta(BuildContext context, String mensagem) {
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(mensagem),
-        backgroundColor: Colors.orangeAccent.shade700,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
+  // --- LÓGICA DE SALVAMENTO ---
 
   Future<void> salvarProduto(BuildContext context) async {
+    final catProv = context
+        .read<CategoriaProvider>(); // Lê a classificação diretamente daqui
+
+    // Validação simplificada
     final bool temNome = nomeController.text.trim().isNotEmpty;
-    final bool temCategoria = categoriaSelecionada != "Selecione uma categoria";
+    final bool temCategoria = catProv.categoriaSelecionada != null;
     final bool temTags = tagsSelecionadas.isNotEmpty;
-    final bool imagemFaltando = !semImagem && imagemBytes == null;
 
-    tagErro = !temTags;
-    imagemErro = imagemFaltando;
-    notifyListeners();
+    updateEstado(() {
+      tagErro = !temTags;
+    });
 
-    if (!temNome || !temCategoria || !temTags || imagemFaltando) {
+    if (!temNome || !temCategoria || !temTags) {
       HapticFeedback.heavyImpact();
-      String msg = "⚠️ Verifique os campos obrigatórios";
-      if (!temNome) {
-        msg = "⚠️ O nome do produto é obrigatório.";
-      } else if (!temCategoria) {
-        msg = "⚠️ Selecione uma categoria válida.";
-      } else if (tagErro) {
-        msg = "⚠️ Selecione ao menos uma tag de busca.";
-      } else if (imagemErro) {
-        msg = "⚠️ Adicione uma foto ou marque 'Sem imagem'.";
-      }
-
-      mostrarAlerta(context, msg);
+      mostrarAlerta(context, "⚠️ Verifique os campos obrigatórios.");
       return;
     }
 
-    estaSalvando = true;
-    notifyListeners();
+    updateEstado(() => estaSalvando = true);
 
     try {
       String? fotoUrl = "semimagem";
-      String idGerado = DateTime.now().millisecondsSinceEpoch.toString();
-
       if (!semImagem && imagemBytes != null) {
         fotoUrl = await _imagemService.uploadProdutoImage(
-          bytes: imagemBytes!,
-          produtoId: idGerado,
-        );
+            bytes: imagemBytes!,
+            produtoId: DateTime.now().millisecondsSinceEpoch.toString());
       }
 
       final novoProduto = Produto(
         id: '',
         tipo: tipoSelecionado,
-        categoria: classeController.text.trim(),
-        subcategoria: subclasseController.text.trim(),
-        produtoBase: produtoBaseController.text.trim(),
-        variacao:
-            variacaoController.text.isNotEmpty ? variacaoController.text : null,
+        categoria: catProv.categoriaSelecionada?.label ?? "",
+        produtoBase: catProv.produtoBaseSelecionado == "ADICIONAR_NOVA"
+            ? catProv.produtoBaseManualController.text
+            : (catProv.produtoBaseSelecionado ?? ""),
+        variacao: catProv.variacaoSelecionada == "ADICIONAR_NOVA"
+            ? catProv.variacaoManualController.text
+            : (catProv.variacaoSelecionada ?? ""),
         nome: nomeController.text.trim(),
         descricao: descricaoController.text.trim(),
         fotoUrl: fotoUrl ?? "semimagem",
@@ -213,7 +154,7 @@ class NovoProdutoProvider extends ChangeNotifier {
         codigoBarras: tipoSelecionado == TipoProduto.industrial
             ? codigoBarrasController.text
             : null,
-        ncm: ncmController.text,
+        ncm: ncmController.text.trim(),
         unidadeMedida: unidadeMedida,
         quantidadeConteudo: double.tryParse(
                 quantidadeConteudoController.text.replaceAll(',', '.')) ??
@@ -229,36 +170,31 @@ class NovoProdutoProvider extends ChangeNotifier {
       );
 
       await _mercadoService.cadastrarProdutoGlobal(novoProduto);
-
-      if (context.mounted) {
-        Navigator.pop(context, true);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text("✅ Produto Cadastrado com Sucesso!"),
-              backgroundColor: Colors.green),
-        );
-      }
+      if (context.mounted) Navigator.pop(context, true);
     } catch (e) {
       if (context.mounted) mostrarAlerta(context, "❌ Erro ao salvar: $e");
     } finally {
-      estaSalvando = false;
-      notifyListeners();
+      updateEstado(() => estaSalvando = false);
     }
+  }
+
+  void mostrarAlerta(BuildContext context, String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg), behavior: SnackBarBehavior.floating));
   }
 
   @override
   void dispose() {
-    nomeController.dispose();
-    descricaoController.dispose();
-    classeController.dispose();
-    subclasseController.dispose();
-    produtoBaseController.dispose();
-    variacaoController.dispose();
-    codigoBarrasController.dispose();
-    marcaController.dispose();
-    quantidadeConteudoController.dispose();
-    pesoEstimadoController.dispose();
-    ncmController.dispose();
+    for (var c in [
+      nomeController,
+      descricaoController,
+      codigoBarrasController,
+      marcaController,
+      quantidadeConteudoController,
+      pesoEstimadoController
+    ]) {
+      c.dispose();
+    }
     super.dispose();
   }
 }

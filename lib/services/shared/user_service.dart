@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/usuario.dart'; // - Alterado de cliente.dart para usuario.dart
 
-class AuthService {
+class UserService {
   final _supabase = Supabase.instance.client;
 
   // --- GETTERS ---

@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../models/mercado.dart';
 import '../../../models/horario_mercado.dart';
-import '../../../models/produto_enums.dart';
+import '../../../enums/produto_enums.dart';
 import '../../../services/lojista/lojista_provider.dart';
 import '../../../services/shared/imagem_service.dart';
 import '../../shared/global_widgets/campo_texto_widget.dart';

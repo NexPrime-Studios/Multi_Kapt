@@ -1,12 +1,6 @@
-// lib/models/item_mercado.dart
-
 class ItemMercado {
   final String produtoId;
-  final String produtoNome;
-  final String produtoImagem;
-  final String produtoCategoria;
-  final String codigoBarras;
-
+  final String mercadoId;
   final double preco;
   final double? precoPromocional;
   final DateTime? inicioPromocao;
@@ -15,17 +9,15 @@ class ItemMercado {
 
   ItemMercado({
     required this.produtoId,
-    required this.produtoNome,
-    required this.produtoImagem,
-    required this.produtoCategoria,
-    required this.codigoBarras,
+    required this.mercadoId,
     required this.preco,
+    required this.disponivel,
     this.precoPromocional,
     this.inicioPromocao,
     this.fimPromocao,
-    required this.disponivel,
   });
 
+  /// Verifica se o item está em promoção ativa no momento atual
   bool get emPromocao {
     final agora = DateTime.now();
     if (precoPromocional == null || precoPromocional! >= preco) return false;
@@ -36,17 +28,14 @@ class ItemMercado {
   factory ItemMercado.fromMap(Map<String, dynamic> map) {
     return ItemMercado(
       produtoId: map['produto_id'] ?? '',
-      produtoNome: map['produto_nome'] ?? 'Produto sem nome',
-      produtoImagem: map['produto_imagem'] ?? '',
-      produtoCategoria: map['produto_categoria'] ?? '',
-      codigoBarras: map['codigo_barras'] ?? '',
+      mercadoId: map['mercado_id'] ?? '',
       preco: (map['preco'] ?? 0.0).toDouble(),
       precoPromocional: map['preco_promocional']?.toDouble(),
-      inicioPromocao: map['inicio__promocao'] != null
-          ? DateTime.parse(map['inicio_promocao'])
+      inicioPromocao: map['inicio_promocao'] != null
+          ? DateTime.tryParse(map['inicio_promocao'].toString())
           : null,
       fimPromocao: map['fim_promocao'] != null
-          ? DateTime.parse(map['fim_promocao'])
+          ? DateTime.tryParse(map['fim_promocao'].toString())
           : null,
       disponivel: map['disponivel'] ?? true,
     );
@@ -55,10 +44,7 @@ class ItemMercado {
   Map<String, dynamic> toMap() {
     return {
       'produto_id': produtoId,
-      'produto_nome': produtoNome,
-      'produto_imagem': produtoImagem,
-      'produto_categoria': produtoCategoria,
-      'codigo_barras': codigoBarras,
+      'mercado_id': mercadoId,
       'preco': preco,
       'preco_promocional': precoPromocional,
       'inicio_promocao': inicioPromocao?.toIso8601String(),
@@ -69,10 +55,7 @@ class ItemMercado {
 
   ItemMercado copyWith({
     String? produtoId,
-    String? produtoNome,
-    String? produtoImagem,
-    String? produtoCategoria,
-    String? codigoBarras,
+    String? mercadoId,
     double? preco,
     double? precoPromocional,
     DateTime? inicioPromocao,
@@ -81,10 +64,7 @@ class ItemMercado {
   }) {
     return ItemMercado(
       produtoId: produtoId ?? this.produtoId,
-      produtoNome: produtoNome ?? this.produtoNome,
-      produtoImagem: produtoImagem ?? this.produtoImagem,
-      produtoCategoria: produtoCategoria ?? this.produtoCategoria,
-      codigoBarras: codigoBarras ?? this.codigoBarras,
+      mercadoId: mercadoId ?? this.mercadoId,
       preco: preco ?? this.preco,
       precoPromocional: precoPromocional ?? this.precoPromocional,
       inicioPromocao: inicioPromocao ?? this.inicioPromocao,
